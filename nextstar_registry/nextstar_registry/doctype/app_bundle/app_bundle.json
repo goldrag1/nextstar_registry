@@ -1,0 +1,84 @@
+{
+  "actions": [],
+  "autoname": "field:bundle_name",
+  "creation": "2026-03-22 22:00:00.000000",
+  "doctype": "DocType",
+  "engine": "InnoDB",
+  "field_order": [
+    "bundle_name",
+    "title",
+    "description",
+    "category",
+    "icon",
+    "install_count",
+    "apps"
+  ],
+  "fields": [
+    {
+      "fieldname": "bundle_name",
+      "fieldtype": "Data",
+      "label": "Bundle Name",
+      "reqd": 1,
+      "unique": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "title",
+      "fieldtype": "Data",
+      "label": "Title",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "description",
+      "fieldtype": "Text",
+      "label": "Description"
+    },
+    {
+      "fieldname": "category",
+      "fieldtype": "Data",
+      "label": "Category"
+    },
+    {
+      "fieldname": "icon",
+      "fieldtype": "Data",
+      "label": "Icon"
+    },
+    {
+      "fieldname": "install_count",
+      "fieldtype": "Int",
+      "label": "Install Count",
+      "default": "0",
+      "read_only": 1
+    },
+    {
+      "fieldname": "apps",
+      "fieldtype": "Table",
+      "label": "Apps",
+      "options": "App Bundle Item"
+    }
+  ],
+  "index_web_pages_for_search": 0,
+  "links": [],
+  "modified": "2026-03-22 22:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Nextstar Registry",
+  "name": "App Bundle",
+  "naming_rule": "By fieldname",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 1,
+      "role": "System Manager"
+    },
+    {
+      "read": 1,
+      "role": "Guest"
+    }
+  ],
+  "sort_field": "modified",
+  "sort_order": "DESC"
+}

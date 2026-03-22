@@ -40,3 +40,61 @@ def run():
 
     frappe.db.commit()
     print(f"Seeded {len(SEED_APPS)} apps")
+
+    # Seed app bundles
+    seed_bundles()
+
+
+SEED_BUNDLES = [
+    {
+        "bundle_name": "communication-suite",
+        "title": "Communication Suite",
+        "description": "Team messaging and customer support in one bundle.",
+        "category": "Productivity",
+        "apps": [
+            {"app": "raven", "install_order": 1, "required": 1},
+            {"app": "helpdesk", "install_order": 2, "required": 1},
+        ],
+    },
+    {
+        "bundle_name": "knowledge-base",
+        "title": "Knowledge & Support",
+        "description": "Wiki-based knowledge management paired with helpdesk support.",
+        "category": "Productivity",
+        "apps": [
+            {"app": "wiki", "install_order": 1, "required": 1},
+            {"app": "helpdesk", "install_order": 2, "required": 1},
+        ],
+    },
+]
+
+
+def seed_bundles():
+    """Seed registry with initial app bundles."""
+    count = 0
+    for data in SEED_BUNDLES:
+        if frappe.db.exists("App Bundle", data["bundle_name"]):
+            continue
+
+        # Only include apps that exist in Registry App
+        apps = [
+            item for item in data["apps"]
+            if frappe.db.exists("Registry App", item["app"])
+        ]
+        if not apps:
+            continue
+
+        bundle = frappe.get_doc({
+            "doctype": "App Bundle",
+            "bundle_name": data["bundle_name"],
+            "title": data["title"],
+            "description": data.get("description", ""),
+            "category": data.get("category", ""),
+            "apps": apps,
+        })
+        bundle.insert(ignore_permissions=True)
+        count += 1
+
+    if count:
+        frappe.db.commit()
+        print(f"Seeded {count} app bundles")

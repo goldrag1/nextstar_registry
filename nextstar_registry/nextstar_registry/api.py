@@ -148,3 +148,42 @@ def report_install(app_name):
                            frappe.db.get_value("Registry App", app_name, "install_count") + 1)
         frappe.db.commit()
     return {"status": "ok"}
+
+
+@frappe.whitelist(allow_guest=True)
+def get_bundles():
+    """Get all available app bundles."""
+    bundles = frappe.get_all(
+        "App Bundle",
+        fields=["bundle_name", "title", "description", "category", "icon", "install_count"],
+    )
+    for b in bundles:
+        b["apps"] = frappe.get_all(
+            "App Bundle Item",
+            filters={"parent": b["bundle_name"]},
+            fields=["app", "install_order", "required"],
+            order_by="install_order asc",
+        )
+        # Add app titles
+        for app in b["apps"]:
+            app["title"] = frappe.db.get_value("Registry App", app["app"], "title") or app["app"]
+    return bundles
+
+
+@frappe.whitelist(allow_guest=True)
+def get_bundle_detail(bundle_name):
+    """Get bundle with its apps list."""
+    if not frappe.db.exists("App Bundle", bundle_name):
+        frappe.throw(f"Bundle '{bundle_name}' not found", frappe.DoesNotExistError)
+
+    bundle = frappe.get_doc("App Bundle", bundle_name).as_dict()
+    # Enrich apps with details
+    for app_item in bundle.get("apps", []):
+        app_doc = frappe.db.get_value(
+            "Registry App", app_item.get("app"),
+            ["title", "description", "github_url", "latest_version", "trust_tier"],
+            as_dict=True,
+        )
+        if app_doc:
+            app_item.update(app_doc)
+    return bundle
