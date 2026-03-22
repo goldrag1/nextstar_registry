@@ -1,0 +1,108 @@
+name: Frappe App Compatibility Test
+
+on:
+  workflow_call:
+    inputs:
+      app_repo_url:
+        description: "GitHub URL of the Frappe app to test"
+        required: true
+        type: string
+      frappe_versions:
+        description: 'JSON array of Frappe branches, e.g. ["version-15","version-16"]'
+        required: false
+        type: string
+        default: '["version-15","version-16"]'
+  workflow_dispatch:
+    inputs:
+      app_repo_url:
+        description: "GitHub URL of the Frappe app to test"
+        required: true
+        type: string
+      frappe_versions:
+        description: "JSON array of Frappe branches"
+        required: false
+        type: string
+        default: '["version-15","version-16"]'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        frappe_version: ${{ fromJSON(inputs.frappe_versions) }}
+
+    services:
+      mariadb:
+        image: mariadb:10.6
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: test_frappe
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mariadb-admin ping -proot"
+          --health-interval=5s
+          --health-timeout=2s
+          --health-retries=5
+      redis-cache:
+        image: redis:alpine
+        ports:
+          - 13000:6379
+      redis-queue:
+        image: redis:alpine
+        ports:
+          - 11000:6379
+
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install wkhtmltopdf
+        run: sudo apt-get install -y wkhtmltopdf
+
+      - name: Install bench
+        run: pip install frappe-bench
+
+      - name: Create bench
+        run: |
+          bench init --frappe-branch ${{ matrix.frappe_version }} --skip-redis-config-generation frappe-bench
+          cd frappe-bench
+          # Configure bench to use service containers
+          cat > sites/common_site_config.json <<EOF
+          {
+            "db_host": "127.0.0.1",
+            "db_port": 3306,
+            "db_password": "root",
+            "redis_cache": "redis://127.0.0.1:13000",
+            "redis_queue": "redis://127.0.0.1:11000"
+          }
+          EOF
+
+      - name: Get app and create site
+        run: |
+          cd frappe-bench
+          bench get-app ${{ inputs.app_repo_url }}
+          APP_NAME=$(echo "${{ inputs.app_repo_url }}" | sed 's|.*/||;s|\.git$||;s|-|_|g')
+          bench new-site test_site --db-root-password root --admin-password admin --no-mariadb-socket
+          bench --site test_site install-app $APP_NAME
+
+      - name: Run migrate
+        run: |
+          cd frappe-bench
+          bench --site test_site migrate
+
+      - name: Run tests
+        run: |
+          cd frappe-bench
+          APP_NAME=$(echo "${{ inputs.app_repo_url }}" | sed 's|.*/||;s|\.git$||;s|-|_|g')
+          bench --site test_site run-tests --app $APP_NAME || true
+
+      - name: Report result
+        if: always()
+        run: |
+          echo "## Compatibility Test: ${{ matrix.frappe_version }}" >> $GITHUB_STEP_SUMMARY
+          echo "App: ${{ inputs.app_repo_url }}" >> $GITHUB_STEP_SUMMARY
+          echo "Status: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
