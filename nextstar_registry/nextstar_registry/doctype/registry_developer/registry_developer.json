@@ -1,0 +1,107 @@
+{
+  "actions": [],
+  "autoname": "field:email",
+  "creation": "2026-03-22 21:00:00.000000",
+  "doctype": "DocType",
+  "engine": "InnoDB",
+  "field_order": [
+    "developer_name",
+    "email",
+    "github_username",
+    "website",
+    "bio",
+    "verified",
+    "verified_date",
+    "api_key",
+    "total_apps",
+    "total_installs"
+  ],
+  "fields": [
+    {
+      "fieldname": "developer_name",
+      "fieldtype": "Data",
+      "label": "Developer Name",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "email",
+      "fieldtype": "Data",
+      "label": "Email",
+      "reqd": 1,
+      "unique": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "github_username",
+      "fieldtype": "Data",
+      "label": "GitHub Username"
+    },
+    {
+      "fieldname": "website",
+      "fieldtype": "Data",
+      "label": "Website"
+    },
+    {
+      "fieldname": "bio",
+      "fieldtype": "Small Text",
+      "label": "Bio"
+    },
+    {
+      "fieldname": "verified",
+      "fieldtype": "Check",
+      "label": "Verified",
+      "default": "0",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "verified_date",
+      "fieldtype": "Datetime",
+      "label": "Verified Date"
+    },
+    {
+      "fieldname": "api_key",
+      "fieldtype": "Data",
+      "label": "API Key",
+      "read_only": 1,
+      "description": "Auto-generated on creation"
+    },
+    {
+      "fieldname": "total_apps",
+      "fieldtype": "Int",
+      "label": "Total Apps",
+      "read_only": 1,
+      "default": "0"
+    },
+    {
+      "fieldname": "total_installs",
+      "fieldtype": "Int",
+      "label": "Total Installs",
+      "read_only": 1,
+      "default": "0"
+    }
+  ],
+  "index_web_pages_for_search": 0,
+  "links": [],
+  "modified": "2026-03-22 21:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Nextstar Registry",
+  "name": "Registry Developer",
+  "naming_rule": "By fieldname",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 1,
+      "role": "System Manager"
+    },
+    {
+      "read": 1,
+      "role": "Guest"
+    }
+  ],
+  "sort_field": "modified",
+  "sort_order": "DESC"
+}

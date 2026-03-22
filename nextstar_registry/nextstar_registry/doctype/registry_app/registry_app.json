@@ -1,0 +1,156 @@
+{
+  "actions": [],
+  "autoname": "field:app_name",
+  "creation": "2026-03-22 21:00:00.000000",
+  "doctype": "DocType",
+  "engine": "InnoDB",
+  "field_order": [
+    "app_name",
+    "title",
+    "description",
+    "long_description",
+    "category",
+    "developer",
+    "trust_tier",
+    "license_type",
+    "license",
+    "github_url",
+    "latest_version",
+    "frappe_compat",
+    "icon_url",
+    "rating",
+    "install_count",
+    "safety_labels",
+    "status"
+  ],
+  "fields": [
+    {
+      "fieldname": "app_name",
+      "fieldtype": "Data",
+      "label": "App Name",
+      "reqd": 1,
+      "unique": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "title",
+      "fieldtype": "Data",
+      "label": "Title",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "description",
+      "fieldtype": "Text",
+      "label": "Description"
+    },
+    {
+      "fieldname": "long_description",
+      "fieldtype": "Text Editor",
+      "label": "Long Description"
+    },
+    {
+      "fieldname": "category",
+      "fieldtype": "Data",
+      "label": "Category",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "developer",
+      "fieldtype": "Link",
+      "label": "Developer",
+      "options": "Registry Developer",
+      "reqd": 1
+    },
+    {
+      "fieldname": "trust_tier",
+      "fieldtype": "Select",
+      "label": "Trust Tier",
+      "options": "Verified\nCommunity",
+      "default": "Community",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "license_type",
+      "fieldtype": "Select",
+      "label": "License Type",
+      "options": "Open Source\nProprietary",
+      "default": "Open Source"
+    },
+    {
+      "fieldname": "license",
+      "fieldtype": "Data",
+      "label": "License"
+    },
+    {
+      "fieldname": "github_url",
+      "fieldtype": "Data",
+      "label": "GitHub URL",
+      "reqd": 1
+    },
+    {
+      "fieldname": "latest_version",
+      "fieldtype": "Data",
+      "label": "Latest Version"
+    },
+    {
+      "fieldname": "frappe_compat",
+      "fieldtype": "Small Text",
+      "label": "Frappe Compat",
+      "description": "JSON array e.g. [\"v15\",\"v16\"]"
+    },
+    {
+      "fieldname": "icon_url",
+      "fieldtype": "Data",
+      "label": "Icon URL"
+    },
+    {
+      "fieldname": "rating",
+      "fieldtype": "Float",
+      "label": "Rating",
+      "default": "0"
+    },
+    {
+      "fieldname": "install_count",
+      "fieldtype": "Int",
+      "label": "Install Count",
+      "default": "0"
+    },
+    {
+      "fieldname": "safety_labels",
+      "fieldtype": "JSON",
+      "label": "Safety Labels"
+    },
+    {
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "label": "Status",
+      "options": "Active\nSuspended\nArchived",
+      "default": "Active",
+      "in_list_view": 1
+    }
+  ],
+  "index_web_pages_for_search": 0,
+  "links": [],
+  "modified": "2026-03-22 21:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Nextstar Registry",
+  "name": "Registry App",
+  "naming_rule": "By fieldname",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 1,
+      "role": "System Manager"
+    },
+    {
+      "read": 1,
+      "role": "Guest"
+    }
+  ],
+  "sort_field": "modified",
+  "sort_order": "DESC"
+}

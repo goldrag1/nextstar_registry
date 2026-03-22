@@ -86,13 +86,13 @@ app_license = "mit"
 # ------------
 
 # before_install = "nextstar_registry.install.before_install"
-# after_install = "nextstar_registry.install.after_install"
+after_install = "nextstar_registry.install.after_install"
 
 # Uninstallation
 # ------------
 
 # before_uninstall = "nextstar_registry.uninstall.before_uninstall"
-# after_uninstall = "nextstar_registry.uninstall.after_uninstall"
+after_uninstall = "nextstar_registry.install.after_uninstall"
 
 # Integration Setup
 # ------------------

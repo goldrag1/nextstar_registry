@@ -1,0 +1,121 @@
+{
+  "actions": [],
+  "autoname": "format:SUB-{####}",
+  "creation": "2026-03-22 21:00:00.000000",
+  "doctype": "DocType",
+  "engine": "InnoDB",
+  "field_order": [
+    "developer",
+    "app_name",
+    "github_url",
+    "version",
+    "description",
+    "category",
+    "license_type",
+    "license",
+    "status",
+    "submitted_at",
+    "reviewed_at",
+    "reviewer_notes",
+    "safety_scan_result"
+  ],
+  "fields": [
+    {
+      "fieldname": "developer",
+      "fieldtype": "Link",
+      "label": "Developer",
+      "options": "Registry Developer",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "app_name",
+      "fieldtype": "Data",
+      "label": "App Name",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "github_url",
+      "fieldtype": "Data",
+      "label": "GitHub URL",
+      "reqd": 1
+    },
+    {
+      "fieldname": "version",
+      "fieldtype": "Data",
+      "label": "Version",
+      "reqd": 1
+    },
+    {
+      "fieldname": "description",
+      "fieldtype": "Text",
+      "label": "Description"
+    },
+    {
+      "fieldname": "category",
+      "fieldtype": "Data",
+      "label": "Category"
+    },
+    {
+      "fieldname": "license_type",
+      "fieldtype": "Select",
+      "label": "License Type",
+      "options": "Open Source\nProprietary",
+      "default": "Open Source"
+    },
+    {
+      "fieldname": "license",
+      "fieldtype": "Data",
+      "label": "License"
+    },
+    {
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "label": "Status",
+      "options": "Pending\nUnder Review\nApproved\nRejected",
+      "default": "Pending",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "submitted_at",
+      "fieldtype": "Datetime",
+      "label": "Submitted At",
+      "default": "Now"
+    },
+    {
+      "fieldname": "reviewed_at",
+      "fieldtype": "Datetime",
+      "label": "Reviewed At"
+    },
+    {
+      "fieldname": "reviewer_notes",
+      "fieldtype": "Text",
+      "label": "Reviewer Notes"
+    },
+    {
+      "fieldname": "safety_scan_result",
+      "fieldtype": "JSON",
+      "label": "Safety Scan Result"
+    }
+  ],
+  "index_web_pages_for_search": 0,
+  "links": [],
+  "modified": "2026-03-22 21:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Nextstar Registry",
+  "name": "App Submission",
+  "naming_rule": "Expression",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 1,
+      "role": "System Manager"
+    }
+  ],
+  "sort_field": "modified",
+  "sort_order": "DESC"
+}
