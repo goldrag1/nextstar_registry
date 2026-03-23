@@ -63,7 +63,8 @@ def get_catalog(category=None, search=None, trust_tier=None, page=1, page_size=2
                 "latest_version", "frappe_compat", "icon_url", "rating",
                 "install_count", "safety_labels", "status",
                 "pricing_type", "price", "currency",
-                "demo_url", "demo_username", "demo_password", "demo_notes"],
+                "demo_url", "demo_username", "demo_password", "demo_notes",
+                "integrity_status", "approved_version", "approved_commit_hash"],
         order_by="install_count desc",
         start=start,
         page_length=page_size,
@@ -177,6 +178,15 @@ def submit_app(app_name, github_url, version, description=None, category=None,
     })
     submission.insert(ignore_permissions=True)
     frappe.db.commit()
+
+    # Enqueue background scan
+    frappe.enqueue(
+        "nextstar_registry.nextstar_registry.scanner_proxy.scan_submission",
+        queue="long",
+        timeout=300,
+        submission_name=submission.name,
+        github_url=github_url,
+    )
 
     return {"submission": submission.name, "status": submission.status}
 
@@ -499,6 +509,10 @@ def complete_review(submission_name, verdict, notes=None):
         reviewer.save(ignore_permissions=True)
     # Create or update Registry App on approval
     if verdict == "Approved":
+        from nextstar_registry.nextstar_registry.scanner_proxy import _get_github_head_hash
+
+        commit_hash = getattr(submission, "scan_commit_hash", "") or _get_github_head_hash(submission.github_url) or ""
+
         if frappe.db.exists("Registry App", submission.app_name):
             app = frappe.get_doc("Registry App", submission.app_name)
             app.latest_version = submission.version
@@ -511,6 +525,9 @@ def complete_review(submission_name, verdict, notes=None):
             app.min_frappe_version = submission.min_frappe_version or app.min_frappe_version
             app.max_frappe_version = submission.max_frappe_version or app.max_frappe_version
             app.required_apps = submission.required_apps or app.required_apps
+            app.approved_commit_hash = commit_hash
+            app.approved_version = submission.version
+            app.integrity_status = "Clean"
             app.status = "Active"
             app.save(ignore_permissions=True)
         else:
@@ -530,6 +547,9 @@ def complete_review(submission_name, verdict, notes=None):
                 "min_frappe_version": submission.min_frappe_version or "",
                 "max_frappe_version": submission.max_frappe_version or "",
                 "required_apps": submission.required_apps or "",
+                "approved_commit_hash": commit_hash,
+                "approved_version": submission.version,
+                "integrity_status": "Clean",
                 "status": "Active",
             }).insert(ignore_permissions=True)
 

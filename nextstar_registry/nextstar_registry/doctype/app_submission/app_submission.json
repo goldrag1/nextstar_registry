@@ -21,7 +21,12 @@
     "safety_labels",
     "min_frappe_version",
     "max_frappe_version",
-    "required_apps"
+    "required_apps",
+    "scan_section",
+    "scan_result",
+    "scan_commit_hash",
+    "scan_date",
+    "ai_scan_ran"
   ],
   "fields": [
     {
@@ -121,11 +126,41 @@
       "fieldname": "required_apps",
       "fieldtype": "Small Text",
       "label": "Required Apps"
+    },
+    {
+      "fieldname": "scan_section",
+      "fieldtype": "Section Break",
+      "label": "Automated Scan"
+    },
+    {
+      "fieldname": "scan_result",
+      "fieldtype": "Long Text",
+      "label": "Scan Result",
+      "read_only": 1
+    },
+    {
+      "fieldname": "scan_commit_hash",
+      "fieldtype": "Data",
+      "label": "Scan Commit Hash",
+      "read_only": 1
+    },
+    {
+      "fieldname": "scan_date",
+      "fieldtype": "Datetime",
+      "label": "Scan Date",
+      "read_only": 1
+    },
+    {
+      "fieldname": "ai_scan_ran",
+      "fieldtype": "Check",
+      "label": "AI Scan Ran",
+      "read_only": 1,
+      "default": "0"
     }
   ],
   "index_web_pages_for_search": 0,
   "links": [],
-  "modified": "2026-03-22 21:00:00.000000",
+  "modified": "2026-03-24 10:00:00.000000",
   "modified_by": "Administrator",
   "module": "Nextstar Registry",
   "name": "App Submission",

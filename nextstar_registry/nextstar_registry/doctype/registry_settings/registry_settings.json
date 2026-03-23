@@ -14,7 +14,12 @@
     "commission_rate",
     "secrets_section",
     "anthropic_api_key",
-    "license_signing_secret"
+    "license_signing_secret",
+    "ai_scan_section",
+    "ai_scan_daily_budget",
+    "column_break_ai_scan",
+    "ai_scan_daily_count",
+    "ai_scan_daily_reset"
   ],
   "fields": [
     {
@@ -67,11 +72,41 @@
       "fieldname": "license_signing_secret",
       "fieldtype": "Password",
       "label": "License Signing Secret"
+    },
+    {
+      "fieldname": "ai_scan_section",
+      "fieldtype": "Section Break",
+      "label": "AI Scanning Budget"
+    },
+    {
+      "fieldname": "ai_scan_daily_budget",
+      "fieldtype": "Currency",
+      "label": "AI Scan Daily Budget ($)",
+      "default": "5",
+      "description": "Maximum daily spend on AI scans. Each scan costs ~$0.05."
+    },
+    {
+      "fieldname": "column_break_ai_scan",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "ai_scan_daily_count",
+      "fieldtype": "Int",
+      "label": "Scans Today",
+      "default": "0",
+      "read_only": 1
+    },
+    {
+      "fieldname": "ai_scan_daily_reset",
+      "fieldtype": "Date",
+      "label": "Daily Reset Date",
+      "read_only": 1,
+      "hidden": 1
     }
   ],
   "index_web_pages_for_search": 0,
   "links": [],
-  "modified": "2026-03-23 10:00:00.000000",
+  "modified": "2026-03-24 10:00:00.000000",
   "modified_by": "Administrator",
   "module": "Nextstar Registry",
   "name": "Registry Settings",

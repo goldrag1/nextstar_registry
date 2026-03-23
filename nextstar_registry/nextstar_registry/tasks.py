@@ -50,6 +50,35 @@ def cleanup_old_health_reports():
     frappe.db.commit()
 
 
+def check_app_integrity():
+    """Daily: compare stored commit hash vs GitHub HEAD for active apps."""
+    from nextstar_registry.nextstar_registry.scanner_proxy import _get_github_head_hash
+
+    apps = frappe.get_all(
+        "Registry App",
+        filters={
+            "status": "Active",
+            "github_url": ("!=", ""),
+            "approved_commit_hash": ("!=", ""),
+        },
+        fields=["app_name", "github_url", "approved_commit_hash"],
+    )
+
+    for app in apps:
+        current_hash = _get_github_head_hash(app["github_url"])
+        if current_hash and current_hash != app["approved_commit_hash"]:
+            frappe.db.set_value("Registry App", app["app_name"], {
+                "integrity_status": "Flagged",
+                "integrity_last_checked": frappe.utils.now_datetime(),
+            })
+        else:
+            frappe.db.set_value("Registry App", app["app_name"], {
+                "integrity_status": "Clean" if current_hash else "Unknown",
+                "integrity_last_checked": frappe.utils.now_datetime(),
+            })
+    frappe.db.commit()
+
+
 def calculate_monthly_payouts():
     """Monthly: calculate payouts for all developers with sales."""
     from frappe.utils import add_months, getdate, today

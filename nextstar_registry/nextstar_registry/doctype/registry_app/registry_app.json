@@ -30,6 +30,11 @@
     "avg_scheduler_success",
     "frappe_version_distribution",
     "featured",
+    "integrity_section",
+    "approved_commit_hash",
+    "approved_version",
+    "integrity_status",
+    "integrity_last_checked",
     "demo_section",
     "demo_url",
     "demo_username",
@@ -207,6 +212,37 @@
       "default": "0"
     },
     {
+      "fieldname": "integrity_section",
+      "fieldtype": "Section Break",
+      "label": "Supply Chain Integrity"
+    },
+    {
+      "fieldname": "approved_commit_hash",
+      "fieldtype": "Data",
+      "label": "Approved Commit Hash",
+      "read_only": 1
+    },
+    {
+      "fieldname": "approved_version",
+      "fieldtype": "Data",
+      "label": "Approved Version",
+      "read_only": 1
+    },
+    {
+      "fieldname": "integrity_status",
+      "fieldtype": "Select",
+      "label": "Integrity Status",
+      "options": "Clean\nFlagged\nUnknown",
+      "default": "Unknown",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "integrity_last_checked",
+      "fieldtype": "Datetime",
+      "label": "Integrity Last Checked",
+      "read_only": 1
+    },
+    {
       "fieldname": "demo_section",
       "fieldtype": "Section Break",
       "label": "Demo Site"
@@ -316,7 +352,7 @@
   ],
   "index_web_pages_for_search": 0,
   "links": [],
-  "modified": "2026-03-24 10:00:00.000000",
+  "modified": "2026-03-24 12:00:00.000000",
   "modified_by": "Administrator",
   "module": "Nextstar Registry",
   "name": "Registry App",
