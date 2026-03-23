@@ -5,7 +5,10 @@ import frappe
 
 def _get_developer_from_api_key():
     """Validate API key from Authorization header and return developer email."""
-    auth = frappe.request.headers.get("Authorization", "") if frappe.request else ""
+    # Check X-Api-Key header first (avoids Frappe auth interception)
+    if not frappe.request:
+        return None
+    api_key = frappe.request.headers.get("X-Api-Key", "")
     if auth.startswith("Bearer "):
         api_key = auth[7:]
         developer = frappe.db.get_value("Registry Developer", {"api_key": api_key}, "email")
