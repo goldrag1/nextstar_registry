@@ -1,0 +1,82 @@
+{
+  "actions": [],
+  "autoname": "hash",
+  "creation": "2026-03-23 10:00:00.000000",
+  "doctype": "DocType",
+  "engine": "InnoDB",
+  "field_order": [
+    "app",
+    "start_date",
+    "end_date",
+    "placement",
+    "paid_amount",
+    "stripe_payment_id",
+    "status"
+  ],
+  "fields": [
+    {
+      "fieldname": "app",
+      "fieldtype": "Link",
+      "label": "App",
+      "options": "Registry App",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "start_date",
+      "fieldtype": "Date",
+      "label": "Start Date",
+      "reqd": 1
+    },
+    {
+      "fieldname": "end_date",
+      "fieldtype": "Date",
+      "label": "End Date",
+      "reqd": 1
+    },
+    {
+      "fieldname": "placement",
+      "fieldtype": "Select",
+      "label": "Placement",
+      "options": "Hero\nBanner\nSidebar",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "paid_amount",
+      "fieldtype": "Currency",
+      "label": "Paid Amount"
+    },
+    {
+      "fieldname": "stripe_payment_id",
+      "fieldtype": "Data",
+      "label": "Stripe Payment ID"
+    },
+    {
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "label": "Status",
+      "options": "Active\nExpired",
+      "default": "Active",
+      "in_list_view": 1
+    }
+  ],
+  "index_web_pages_for_search": 0,
+  "links": [],
+  "modified": "2026-03-23 10:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Nextstar Registry",
+  "name": "Featured Listing",
+  "naming_rule": "Random",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 1,
+      "role": "System Manager"
+    }
+  ],
+  "sort_field": "modified",
+  "sort_order": "DESC"
+}

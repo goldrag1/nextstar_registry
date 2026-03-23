@@ -1,0 +1,97 @@
+{
+  "actions": [],
+  "autoname": "format:PAYOUT-{####}",
+  "creation": "2026-03-23 10:00:00.000000",
+  "doctype": "DocType",
+  "engine": "InnoDB",
+  "field_order": [
+    "developer",
+    "period_start",
+    "period_end",
+    "total_sales",
+    "commission_amount",
+    "net_payout",
+    "status",
+    "payout_date",
+    "payout_reference",
+    "line_items"
+  ],
+  "fields": [
+    {
+      "fieldname": "developer",
+      "fieldtype": "Link",
+      "label": "Developer",
+      "options": "Registry Developer",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "period_start",
+      "fieldtype": "Date",
+      "label": "Period Start"
+    },
+    {
+      "fieldname": "period_end",
+      "fieldtype": "Date",
+      "label": "Period End"
+    },
+    {
+      "fieldname": "total_sales",
+      "fieldtype": "Currency",
+      "label": "Total Sales"
+    },
+    {
+      "fieldname": "commission_amount",
+      "fieldtype": "Currency",
+      "label": "Commission Amount"
+    },
+    {
+      "fieldname": "net_payout",
+      "fieldtype": "Currency",
+      "label": "Net Payout",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "label": "Status",
+      "options": "Pending\nPaid\nCancelled",
+      "default": "Pending",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "payout_date",
+      "fieldtype": "Date",
+      "label": "Payout Date"
+    },
+    {
+      "fieldname": "payout_reference",
+      "fieldtype": "Data",
+      "label": "Payout Reference"
+    },
+    {
+      "fieldname": "line_items",
+      "fieldtype": "Text",
+      "label": "Line Items"
+    }
+  ],
+  "index_web_pages_for_search": 0,
+  "links": [],
+  "modified": "2026-03-23 10:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Nextstar Registry",
+  "name": "Developer Payout",
+  "naming_rule": "Expression (old style)",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 1,
+      "role": "System Manager"
+    }
+  ],
+  "sort_field": "modified",
+  "sort_order": "DESC"
+}

@@ -38,3 +38,56 @@ def cleanup_old_health_reports():
         WHERE report_date < DATE_SUB(CURDATE(), INTERVAL 90 DAY) LIMIT 1000"""
     )
     frappe.db.commit()
+
+
+def calculate_monthly_payouts():
+    """Monthly: calculate payouts for all developers with sales."""
+    from frappe.utils import add_months, getdate, today
+
+    period_end = getdate(today())
+    period_start = add_months(period_end, -1)
+
+    settings = frappe.get_single("Registry Settings")
+    commission_rate = float(settings.commission_rate or 15) / 100
+
+    # Get all licenses issued in the period
+    licenses = frappe.get_all(
+        "App License",
+        filters={
+            "issued_at": ("between", [period_start, period_end]),
+            "stripe_payment_id": ("!=", ""),
+        },
+        fields=["app", "buyer_email", "stripe_payment_id", "issued_at"],
+    )
+
+    # Group by developer
+    dev_sales = {}
+    for lic in licenses:
+        app = frappe.get_doc("Registry App", lic["app"])
+        developer = app.developer
+        if not developer:
+            continue
+        if developer not in dev_sales:
+            dev_sales[developer] = {"total": 0, "items": []}
+        price = float(app.price or 0)
+        dev_sales[developer]["total"] += price
+        dev_sales[developer]["items"].append({
+            "app": lic["app"], "price": price, "date": str(lic["issued_at"]),
+        })
+
+    # Create payout records
+    for developer, data in dev_sales.items():
+        commission = data["total"] * commission_rate
+        net = data["total"] - commission
+        frappe.get_doc({
+            "doctype": "Developer Payout",
+            "developer": developer,
+            "period_start": period_start,
+            "period_end": period_end,
+            "total_sales": data["total"],
+            "commission_amount": commission,
+            "net_payout": net,
+            "line_items": json.dumps(data["items"]),
+        }).insert(ignore_permissions=True)
+
+    frappe.db.commit()

@@ -1,0 +1,73 @@
+{
+  "actions": [],
+  "autoname": "format:SPOTLIGHT-{month}",
+  "creation": "2026-03-23 10:00:00.000000",
+  "doctype": "DocType",
+  "engine": "InnoDB",
+  "field_order": [
+    "developer",
+    "month",
+    "title",
+    "description",
+    "featured_app",
+    "photo_url"
+  ],
+  "fields": [
+    {
+      "fieldname": "developer",
+      "fieldtype": "Link",
+      "label": "Developer",
+      "options": "Registry Developer",
+      "reqd": 1
+    },
+    {
+      "fieldname": "month",
+      "fieldtype": "Date",
+      "label": "Month",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "title",
+      "fieldtype": "Data",
+      "label": "Title",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "description",
+      "fieldtype": "Text",
+      "label": "Description"
+    },
+    {
+      "fieldname": "featured_app",
+      "fieldtype": "Link",
+      "label": "Featured App",
+      "options": "Registry App"
+    },
+    {
+      "fieldname": "photo_url",
+      "fieldtype": "Data",
+      "label": "Photo URL"
+    }
+  ],
+  "index_web_pages_for_search": 0,
+  "links": [],
+  "modified": "2026-03-23 10:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Nextstar Registry",
+  "name": "Developer Spotlight",
+  "naming_rule": "Expression (old style)",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 1,
+      "role": "System Manager"
+    }
+  ],
+  "sort_field": "modified",
+  "sort_order": "DESC"
+}

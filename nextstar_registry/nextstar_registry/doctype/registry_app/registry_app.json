@@ -26,7 +26,15 @@
     "avg_error_rate",
     "avg_scheduler_success",
     "frappe_version_distribution",
-    "featured"
+    "featured",
+    "pricing_section",
+    "pricing_type",
+    "price",
+    "currency",
+    "column_break_pricing",
+    "stripe_price_id",
+    "total_revenue",
+    "license_count"
   ],
   "fields": [
     {
@@ -165,6 +173,52 @@
       "fieldname": "featured",
       "fieldtype": "Check",
       "label": "Featured",
+      "default": "0"
+    },
+    {
+      "fieldname": "pricing_section",
+      "fieldtype": "Section Break",
+      "label": "Pricing"
+    },
+    {
+      "fieldname": "pricing_type",
+      "fieldtype": "Select",
+      "label": "Pricing Type",
+      "options": "Free\nPaid\nFreemium",
+      "default": "Free"
+    },
+    {
+      "fieldname": "price",
+      "fieldtype": "Currency",
+      "label": "Price"
+    },
+    {
+      "fieldname": "currency",
+      "fieldtype": "Data",
+      "label": "Currency",
+      "default": "USD"
+    },
+    {
+      "fieldname": "column_break_pricing",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "stripe_price_id",
+      "fieldtype": "Data",
+      "label": "Stripe Price ID"
+    },
+    {
+      "fieldname": "total_revenue",
+      "fieldtype": "Currency",
+      "label": "Total Revenue",
+      "read_only": 1,
+      "default": "0"
+    },
+    {
+      "fieldname": "license_count",
+      "fieldtype": "Int",
+      "label": "License Count",
+      "read_only": 1,
       "default": "0"
     }
   ],

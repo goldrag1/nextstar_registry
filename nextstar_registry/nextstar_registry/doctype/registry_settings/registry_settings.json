@@ -1,0 +1,89 @@
+{
+  "actions": [],
+  "creation": "2026-03-23 10:00:00.000000",
+  "doctype": "DocType",
+  "engine": "InnoDB",
+  "issingle": 1,
+  "field_order": [
+    "stripe_section",
+    "stripe_secret_key",
+    "stripe_publishable_key",
+    "stripe_webhook_secret",
+    "column_break_stripe",
+    "payout_currency",
+    "commission_rate",
+    "secrets_section",
+    "anthropic_api_key",
+    "license_signing_secret"
+  ],
+  "fields": [
+    {
+      "fieldname": "stripe_section",
+      "fieldtype": "Section Break",
+      "label": "Stripe Integration"
+    },
+    {
+      "fieldname": "stripe_secret_key",
+      "fieldtype": "Password",
+      "label": "Stripe Secret Key"
+    },
+    {
+      "fieldname": "stripe_publishable_key",
+      "fieldtype": "Data",
+      "label": "Stripe Publishable Key"
+    },
+    {
+      "fieldname": "stripe_webhook_secret",
+      "fieldtype": "Password",
+      "label": "Stripe Webhook Secret"
+    },
+    {
+      "fieldname": "column_break_stripe",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "payout_currency",
+      "fieldtype": "Data",
+      "label": "Payout Currency",
+      "default": "USD"
+    },
+    {
+      "fieldname": "commission_rate",
+      "fieldtype": "Percent",
+      "label": "Commission Rate",
+      "default": "15"
+    },
+    {
+      "fieldname": "secrets_section",
+      "fieldtype": "Section Break",
+      "label": "Secrets"
+    },
+    {
+      "fieldname": "anthropic_api_key",
+      "fieldtype": "Password",
+      "label": "Anthropic API Key"
+    },
+    {
+      "fieldname": "license_signing_secret",
+      "fieldtype": "Password",
+      "label": "License Signing Secret"
+    }
+  ],
+  "index_web_pages_for_search": 0,
+  "links": [],
+  "modified": "2026-03-23 10:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Nextstar Registry",
+  "name": "Registry Settings",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "role": "System Manager"
+    }
+  ],
+  "sort_field": "modified",
+  "sort_order": "DESC"
+}

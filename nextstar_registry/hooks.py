@@ -148,6 +148,9 @@ scheduler_events = {
 		"nextstar_registry.nextstar_registry.tasks.aggregate_health_data",
 		"nextstar_registry.nextstar_registry.tasks.cleanup_old_health_reports",
 	],
+	"monthly_long": [
+		"nextstar_registry.nextstar_registry.tasks.calculate_monthly_payouts",
+	],
 }
 
 # Testing

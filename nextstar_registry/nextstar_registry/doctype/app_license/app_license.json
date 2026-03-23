@@ -1,0 +1,95 @@
+{
+  "actions": [],
+  "autoname": "field:license_key",
+  "creation": "2026-03-23 10:00:00.000000",
+  "doctype": "DocType",
+  "engine": "InnoDB",
+  "field_order": [
+    "license_key",
+    "app",
+    "buyer_email",
+    "buyer_instance",
+    "status",
+    "issued_at",
+    "expires_at",
+    "stripe_payment_id",
+    "stripe_checkout_session"
+  ],
+  "fields": [
+    {
+      "fieldname": "license_key",
+      "fieldtype": "Data",
+      "label": "License Key",
+      "reqd": 1,
+      "unique": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "app",
+      "fieldtype": "Link",
+      "label": "App",
+      "options": "Registry App",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "buyer_email",
+      "fieldtype": "Data",
+      "label": "Buyer Email",
+      "options": "Email",
+      "reqd": 1
+    },
+    {
+      "fieldname": "buyer_instance",
+      "fieldtype": "Data",
+      "label": "Buyer Instance"
+    },
+    {
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "label": "Status",
+      "options": "Active\nExpired\nRevoked",
+      "default": "Active",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "issued_at",
+      "fieldtype": "Datetime",
+      "label": "Issued At"
+    },
+    {
+      "fieldname": "expires_at",
+      "fieldtype": "Datetime",
+      "label": "Expires At"
+    },
+    {
+      "fieldname": "stripe_payment_id",
+      "fieldtype": "Data",
+      "label": "Stripe Payment ID"
+    },
+    {
+      "fieldname": "stripe_checkout_session",
+      "fieldtype": "Data",
+      "label": "Stripe Checkout Session"
+    }
+  ],
+  "index_web_pages_for_search": 0,
+  "links": [],
+  "modified": "2026-03-23 10:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Nextstar Registry",
+  "name": "App License",
+  "naming_rule": "By fieldname",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 1,
+      "role": "System Manager"
+    }
+  ],
+  "sort_field": "modified",
+  "sort_order": "DESC"
+}

@@ -31,7 +31,8 @@ def get_catalog(category=None, search=None, trust_tier=None, page=1, page_size=2
         fields=["app_name", "title", "description", "category", "developer",
                 "trust_tier", "license_type", "license", "github_url",
                 "latest_version", "frappe_compat", "icon_url", "rating",
-                "install_count", "safety_labels", "status"],
+                "install_count", "safety_labels", "status",
+                "pricing_type", "price", "currency"],
         order_by="install_count desc",
         start=start,
         page_length=page_size,
@@ -482,15 +483,39 @@ def get_recommendations(installed_apps):
 
 @frappe.whitelist(allow_guest=True)
 def get_featured():
-    """Get featured apps for the Today tab."""
+    """Get featured apps for the Today tab (includes Featured Listing entries)."""
     featured = frappe.get_all(
         "Registry App",
         filters={"featured": 1, "status": "Active"},
         fields=[
             "app_name", "title", "description", "category", "developer",
             "trust_tier", "rating", "install_count", "github_url", "latest_version", "icon_url",
+            "price", "pricing_type",
         ],
     )
+    featured_app_names = {a["app_name"] for a in featured}
+
+    # Merge active Featured Listings
+    from frappe.utils import today
+    listings = frappe.get_all(
+        "Featured Listing",
+        filters={"status": "Active", "start_date": ("<=", today()), "end_date": (">=", today())},
+        fields=["app", "placement"],
+    )
+    for listing in listings:
+        if listing["app"] not in featured_app_names:
+            app_data = frappe.db.get_value(
+                "Registry App", listing["app"],
+                ["app_name", "title", "description", "category", "developer", "trust_tier",
+                 "rating", "install_count", "github_url", "latest_version", "icon_url",
+                 "price", "pricing_type"],
+                as_dict=True,
+            )
+            if app_data:
+                app_data["placement"] = listing["placement"]
+                featured.append(app_data)
+                featured_app_names.add(listing["app"])
+
     for app in featured:
         if app.get("developer"):
             app["developer_name"] = (
@@ -519,3 +544,140 @@ def proxy_scan_app(github_url):
     from nextstar_registry.nextstar_registry.scanner_proxy import proxy_scan
 
     return proxy_scan(github_url)
+
+
+# ---------------------------------------------------------------------------
+# Phase 4 — License endpoints
+# ---------------------------------------------------------------------------
+
+@frappe.whitelist(allow_guest=True)
+def validate_license(license_key, instance_uuid=None):
+    """Validate a license key (called by customer instances)."""
+    from nextstar_registry.nextstar_registry.license_manager import validate_license as _validate
+    return _validate(license_key, instance_uuid)
+
+
+@frappe.whitelist()
+def get_license_status(license_key):
+    """Get license details (authenticated)."""
+    if not frappe.db.exists("App License", license_key):
+        frappe.throw("License not found")
+    return frappe.get_doc("App License", license_key).as_dict()
+
+
+@frappe.whitelist()
+def revoke_license(license_key):
+    """Revoke a license (admin only)."""
+    frappe.only_for("System Manager")
+    from nextstar_registry.nextstar_registry.license_manager import revoke_license as _revoke
+    return _revoke(license_key)
+
+
+# ---------------------------------------------------------------------------
+# Phase 4 — Stripe endpoints
+# ---------------------------------------------------------------------------
+
+@frappe.whitelist(allow_guest=True)
+def create_checkout(app_name, buyer_email, success_url, cancel_url):
+    """Create Stripe Checkout session for purchasing an app."""
+    from nextstar_registry.nextstar_registry.stripe_integration import create_checkout_session
+    return create_checkout_session(app_name, buyer_email, success_url, cancel_url)
+
+
+@frappe.whitelist(allow_guest=True, methods=["POST"])
+def stripe_webhook():
+    """Handle Stripe webhook events."""
+    from nextstar_registry.nextstar_registry.stripe_integration import handle_webhook
+    payload = frappe.request.get_data(as_text=True)
+    sig_header = frappe.request.headers.get("Stripe-Signature", "")
+    return handle_webhook(payload, sig_header)
+
+
+# ---------------------------------------------------------------------------
+# Phase 4 — Payout, Featured, Spotlight endpoints
+# ---------------------------------------------------------------------------
+
+@frappe.whitelist()
+def get_developer_payouts(developer_email):
+    """Get payout history for a developer."""
+    return frappe.get_all(
+        "Developer Payout",
+        filters={"developer": developer_email},
+        fields=["name", "period_start", "period_end", "total_sales",
+                "commission_amount", "net_payout", "status"],
+        order_by="period_end desc",
+    )
+
+
+@frappe.whitelist(allow_guest=True)
+def get_featured_listings():
+    """Get active featured listings."""
+    from frappe.utils import today
+    listings = frappe.get_all(
+        "Featured Listing",
+        filters={"status": "Active", "start_date": ("<=", today()), "end_date": (">=", today())},
+        fields=["app", "placement"],
+    )
+    for l in listings:
+        app_data = frappe.db.get_value(
+            "Registry App", l["app"],
+            ["app_name", "title", "description", "developer", "trust_tier", "rating",
+             "install_count", "github_url", "latest_version", "icon_url", "price", "pricing_type"],
+            as_dict=True,
+        )
+        if app_data:
+            l.update(app_data)
+            if app_data.get("developer"):
+                l["developer_name"] = (
+                    frappe.db.get_value("Registry Developer", app_data["developer"], "developer_name") or ""
+                )
+    return listings
+
+
+@frappe.whitelist(allow_guest=True)
+def get_developer_spotlight():
+    """Get current month's developer spotlight."""
+    from frappe.utils import getdate, today
+    current_month = getdate(today()).replace(day=1)
+    spotlight = frappe.get_all(
+        "Developer Spotlight",
+        filters={"month": current_month},
+        fields=["developer", "title", "description", "featured_app", "photo_url"],
+        limit=1,
+    )
+    if spotlight:
+        s = spotlight[0]
+        if s.get("developer"):
+            s["developer_name"] = (
+                frappe.db.get_value("Registry Developer", s["developer"], "developer_name") or ""
+            )
+        if s.get("featured_app"):
+            s["app_title"] = frappe.db.get_value("Registry App", s["featured_app"], "title") or ""
+        return s
+    return None
+
+
+@frappe.whitelist()
+def purchase_featured(app_name, placement, duration_days):
+    """Purchase featured placement."""
+    from frappe.utils import add_days, today
+
+    # Featured placement pricing (simple weekly pricing)
+    pricing = {"Hero": 99, "Banner": 49, "Sidebar": 29}
+    price_per_day = pricing.get(placement, 29)
+    duration_days = int(duration_days)
+    total = price_per_day * (duration_days / 7)  # Weekly pricing
+
+    # For now, just create the featured listing directly (no payment for MVP)
+    doc = frappe.get_doc({
+        "doctype": "Featured Listing",
+        "app": app_name,
+        "start_date": today(),
+        "end_date": add_days(today(), duration_days),
+        "placement": placement,
+        "paid_amount": total,
+        "status": "Active",
+    })
+    doc.insert(ignore_permissions=True)
+    frappe.db.commit()
+    return {"status": "active", "end_date": str(doc.end_date)}
