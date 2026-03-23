@@ -1,0 +1,68 @@
+{
+  "actions": [],
+  "autoname": "hash",
+  "creation": "2026-03-23 10:00:00.000000",
+  "doctype": "DocType",
+  "engine": "InnoDB",
+  "field_order": [
+    "app",
+    "reporting_instance",
+    "error_count",
+    "scheduler_success_rate",
+    "frappe_version",
+    "report_date"
+  ],
+  "fields": [
+    {
+      "fieldname": "app",
+      "fieldtype": "Link",
+      "label": "App",
+      "options": "Registry App",
+      "reqd": 1
+    },
+    {
+      "fieldname": "reporting_instance",
+      "fieldtype": "Data",
+      "label": "Reporting Instance"
+    },
+    {
+      "fieldname": "error_count",
+      "fieldtype": "Int",
+      "label": "Error Count"
+    },
+    {
+      "fieldname": "scheduler_success_rate",
+      "fieldtype": "Float",
+      "label": "Scheduler Success Rate"
+    },
+    {
+      "fieldname": "frappe_version",
+      "fieldtype": "Data",
+      "label": "Frappe Version"
+    },
+    {
+      "fieldname": "report_date",
+      "fieldtype": "Date",
+      "label": "Report Date"
+    }
+  ],
+  "index_web_pages_for_search": 0,
+  "links": [],
+  "modified": "2026-03-23 10:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Nextstar Registry",
+  "name": "Health Report",
+  "naming_rule": "Random",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 1,
+      "role": "System Manager"
+    }
+  ],
+  "sort_field": "modified",
+  "sort_order": "DESC"
+}

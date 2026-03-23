@@ -1,3 +1,5 @@
+import json
+
 import frappe
 
 
@@ -187,3 +189,304 @@ def get_bundle_detail(bundle_name):
         if app_doc:
             app_item.update(app_doc)
     return bundle
+
+
+# ---------------------------------------------------------------------------
+# Task 1 — Content endpoints
+# ---------------------------------------------------------------------------
+
+@frappe.whitelist(allow_guest=True)
+def get_app_versions(app_name, page=1, page_size=10):
+    """Get version history for an app."""
+    page = int(page)
+    page_size = min(int(page_size), 50)
+    start = (page - 1) * page_size
+    return frappe.get_all(
+        "App Version",
+        filters={"app": app_name},
+        fields=["version", "release_notes", "release_date", "frappe_compat"],
+        order_by="release_date desc",
+        start=start,
+        page_length=page_size,
+    )
+
+
+@frappe.whitelist()
+def submit_version(app_name, version, release_notes=None, frappe_compat=None):
+    """Publish a new version."""
+    if not frappe.db.exists("Registry App", app_name):
+        frappe.throw(f"App '{app_name}' not found")
+    doc = frappe.get_doc({
+        "doctype": "App Version",
+        "app": app_name,
+        "version": version,
+        "release_notes": release_notes or "",
+        "release_date": frappe.utils.today(),
+        "frappe_compat": frappe_compat or "[]",
+    })
+    doc.insert(ignore_permissions=True)
+    frappe.db.set_value("Registry App", app_name, "latest_version", version)
+    frappe.db.commit()
+    return {"version": doc.version, "name": doc.name}
+
+
+@frappe.whitelist(allow_guest=True)
+def get_screenshots(app_name):
+    """Get screenshots for an app."""
+    return frappe.get_all(
+        "App Screenshot",
+        filters={"app": app_name},
+        fields=["image", "caption", "sort_order"],
+        order_by="sort_order asc",
+    )
+
+
+@frappe.whitelist()
+def upload_screenshot(app_name, caption=None):
+    """Upload a screenshot for an app."""
+    if not frappe.db.exists("Registry App", app_name):
+        frappe.throw(f"App '{app_name}' not found")
+    doc = frappe.get_doc({
+        "doctype": "App Screenshot",
+        "app": app_name,
+        "caption": caption or "",
+        "sort_order": frappe.db.count("App Screenshot", {"app": app_name}),
+    })
+    doc.insert(ignore_permissions=True)
+    frappe.db.commit()
+    return {"name": doc.name}
+
+
+@frappe.whitelist(allow_guest=True)
+def get_recent_updates(limit=5):
+    """Get most recent app version releases across all apps."""
+    limit = min(int(limit), 20)
+    versions = frappe.get_all(
+        "App Version",
+        fields=["app", "version", "release_notes", "release_date"],
+        order_by="release_date desc, creation desc",
+        page_length=limit,
+    )
+    for v in versions:
+        v["title"] = frappe.db.get_value("Registry App", v["app"], "title") or v["app"]
+    return versions
+
+
+# ---------------------------------------------------------------------------
+# Task 2 — Trust endpoints
+# ---------------------------------------------------------------------------
+
+@frappe.whitelist(allow_guest=True)
+def submit_review(app_name, rating, title, body=None, install_proof=None):
+    """Submit a verified review."""
+    if not frappe.db.exists("Registry App", app_name):
+        frappe.throw(f"App '{app_name}' not found")
+    rating = int(rating)
+    if rating < 1 or rating > 5:
+        frappe.throw("Rating must be between 1 and 5")
+    if install_proof and frappe.db.exists("App Review", {"install_proof": install_proof}):
+        frappe.throw("Review already submitted with this install proof")
+    doc = frappe.get_doc({
+        "doctype": "App Review",
+        "app": app_name,
+        "rating": rating,
+        "title": title,
+        "body": body or "",
+        "install_proof": install_proof or "",
+        "reviewer_email": frappe.session.user,
+        "status": "Published",
+    })
+    doc.insert(ignore_permissions=True)
+    # Update average rating on Registry App
+    avg = frappe.db.sql(
+        """SELECT AVG(rating) FROM `tabApp Review`
+        WHERE app=%s AND status='Published'""", app_name
+    )[0][0] or 0
+    frappe.db.set_value("Registry App", app_name, "rating", round(float(avg), 1))
+    frappe.db.commit()
+    return {"name": doc.name, "status": doc.status}
+
+
+@frappe.whitelist(allow_guest=True)
+def get_reviews(app_name, page=1, page_size=10):
+    """Get reviews for an app."""
+    page = int(page)
+    page_size = min(int(page_size), 50)
+    start = (page - 1) * page_size
+    reviews = frappe.get_all(
+        "App Review",
+        filters={"app": app_name, "status": "Published"},
+        fields=[
+            "name", "reviewer_email", "rating", "title", "body", "helpful_count",
+            "not_helpful_count", "developer_response", "developer_response_date", "creation",
+        ],
+        order_by="creation desc",
+        start=start,
+        page_length=page_size,
+    )
+    total = frappe.db.count("App Review", {"app": app_name, "status": "Published"})
+    avg = frappe.db.sql(
+        """SELECT AVG(rating) FROM `tabApp Review`
+        WHERE app=%s AND status='Published'""", app_name
+    )[0][0] or 0
+    return {"reviews": reviews, "total": total, "average_rating": round(float(avg), 1)}
+
+
+@frappe.whitelist()
+def respond_to_review(review_name, response_text):
+    """Developer responds to a review."""
+    review = frappe.get_doc("App Review", review_name)
+    review.developer_response = response_text
+    review.developer_response_date = frappe.utils.now_datetime()
+    review.save(ignore_permissions=True)
+    frappe.db.commit()
+    return {"status": "ok"}
+
+
+@frappe.whitelist()
+def vote_review(review_name, vote):
+    """Vote a review helpful or not helpful."""
+    if vote not in ("helpful", "not_helpful"):
+        frappe.throw("Vote must be 'helpful' or 'not_helpful'")
+    field = "helpful_count" if vote == "helpful" else "not_helpful_count"
+    current = frappe.db.get_value("App Review", review_name, field) or 0
+    frappe.db.set_value("App Review", review_name, field, current + 1)
+    frappe.db.commit()
+    return {"status": "ok"}
+
+
+@frappe.whitelist()
+def invite_reviewer(email, display_name):
+    """Invite a community reviewer."""
+    frappe.only_for("System Manager")
+    if frappe.db.exists("Community Reviewer", email):
+        frappe.throw(f"Reviewer '{email}' already exists")
+    doc = frappe.get_doc({
+        "doctype": "Community Reviewer",
+        "email": email,
+        "display_name": display_name,
+        "status": "Invited",
+        "invited_by": frappe.session.user,
+        "invite_date": frappe.utils.today(),
+    })
+    doc.insert(ignore_permissions=True)
+    frappe.db.commit()
+    return {"email": doc.email, "status": doc.status}
+
+
+@frappe.whitelist()
+def complete_review(submission_name, verdict, notes=None):
+    """Community reviewer completes a submission review."""
+    if verdict not in ("Approved", "Rejected"):
+        frappe.throw("Verdict must be 'Approved' or 'Rejected'")
+    submission = frappe.get_doc("App Submission", submission_name)
+    submission.status = verdict
+    submission.save(ignore_permissions=True)
+    # Add reputation points to reviewer
+    reviewer_email = frappe.session.user
+    if frappe.db.exists("Community Reviewer", reviewer_email):
+        reviewer = frappe.get_doc("Community Reviewer", reviewer_email)
+        reviewer.reputation_points += 10
+        reviewer.reviews_completed += 1
+        reviewer.save(ignore_permissions=True)
+    # Auto-upgrade developer trust level on first approval
+    if verdict == "Approved" and submission.developer:
+        if frappe.db.exists("Registry Developer", submission.developer):
+            frappe.db.set_value("Registry Developer", submission.developer, "trust_level", "Established")
+    frappe.db.commit()
+    return {"status": verdict}
+
+
+# ---------------------------------------------------------------------------
+# Task 3 — Intelligence endpoints
+# ---------------------------------------------------------------------------
+
+@frappe.whitelist(allow_guest=True)
+def report_health(instance_uuid, app_name, error_count, scheduler_success_rate, frappe_version):
+    """Accept anonymous health report from an instance."""
+    if not frappe.db.exists("Registry App", app_name):
+        return {"status": "unknown_app"}
+    doc = frappe.get_doc({
+        "doctype": "Health Report",
+        "app": app_name,
+        "reporting_instance": instance_uuid,
+        "error_count": int(error_count),
+        "scheduler_success_rate": float(scheduler_success_rate),
+        "frappe_version": frappe_version,
+        "report_date": frappe.utils.today(),
+    })
+    doc.insert(ignore_permissions=True)
+    frappe.db.commit()
+    return {"status": "ok"}
+
+
+@frappe.whitelist()
+def get_health_summary(app_name):
+    """Get aggregate health for a developer's app."""
+    if not frappe.db.exists("Registry App", app_name):
+        frappe.throw(f"App '{app_name}' not found")
+    app = frappe.get_doc("Registry App", app_name)
+    return {
+        "total_reporting_instances": app.total_reporting_instances or 0,
+        "avg_error_rate": app.avg_error_rate or 0,
+        "avg_scheduler_success": app.avg_scheduler_success or 0,
+        "frappe_version_distribution": frappe.parse_json(app.frappe_version_distribution or "{}"),
+    }
+
+
+@frappe.whitelist(allow_guest=True)
+def get_recommendations(installed_apps):
+    """Get app recommendations based on installed apps."""
+    if isinstance(installed_apps, str):
+        installed_apps = json.loads(installed_apps)
+    if not installed_apps:
+        return []
+    # Query using the denormalized child table
+    placeholders = ", ".join(["%s"] * len(installed_apps))
+    rule_names = frappe.db.sql(
+        f"""SELECT DISTINCT parent FROM `tabRecommendation Rule App`
+        WHERE app IN ({placeholders})""",
+        tuple(installed_apps),
+        as_list=True,
+    )
+    if not rule_names:
+        return []
+    rule_names = [r[0] for r in rule_names]
+    recommendations = []
+    for rule_name in rule_names:
+        rule = frappe.get_doc("Recommendation Rule", rule_name)
+        app_name = rule.then_recommend
+        if app_name in installed_apps:
+            continue  # Don't recommend already installed apps
+        app_data = frappe.db.get_value(
+            "Registry App", app_name,
+            ["app_name", "title", "description", "category", "trust_tier", "rating",
+             "install_count", "github_url", "latest_version", "icon_url"],
+            as_dict=True,
+        )
+        if app_data:
+            app_data["recommendation_reason"] = rule.category
+            app_data["priority"] = rule.priority
+            recommendations.append(app_data)
+    recommendations.sort(key=lambda x: x.get("priority", 0), reverse=True)
+    return recommendations
+
+
+@frappe.whitelist(allow_guest=True)
+def get_featured():
+    """Get featured apps for the Today tab."""
+    featured = frappe.get_all(
+        "Registry App",
+        filters={"featured": 1, "status": "Active"},
+        fields=[
+            "app_name", "title", "description", "category", "developer",
+            "trust_tier", "rating", "install_count", "github_url", "latest_version", "icon_url",
+        ],
+    )
+    for app in featured:
+        if app.get("developer"):
+            app["developer_name"] = (
+                frappe.db.get_value("Registry Developer", app["developer"], "developer_name")
+                or app["developer"]
+            )
+    return featured

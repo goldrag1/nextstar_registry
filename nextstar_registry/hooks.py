@@ -143,23 +143,12 @@ after_uninstall = "nextstar_registry.install.after_uninstall"
 # Scheduled Tasks
 # ---------------
 
-# scheduler_events = {
-# 	"all": [
-# 		"nextstar_registry.tasks.all"
-# 	],
-# 	"daily": [
-# 		"nextstar_registry.tasks.daily"
-# 	],
-# 	"hourly": [
-# 		"nextstar_registry.tasks.hourly"
-# 	],
-# 	"weekly": [
-# 		"nextstar_registry.tasks.weekly"
-# 	],
-# 	"monthly": [
-# 		"nextstar_registry.tasks.monthly"
-# 	],
-# }
+scheduler_events = {
+	"daily": [
+		"nextstar_registry.nextstar_registry.tasks.aggregate_health_data",
+		"nextstar_registry.nextstar_registry.tasks.cleanup_old_health_reports",
+	],
+}
 
 # Testing
 # -------

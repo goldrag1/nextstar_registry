@@ -1,0 +1,74 @@
+{
+  "actions": [],
+  "autoname": "format:{app}-{version}",
+  "creation": "2026-03-23 10:00:00.000000",
+  "doctype": "DocType",
+  "engine": "InnoDB",
+  "field_order": [
+    "app",
+    "version",
+    "release_notes",
+    "release_date",
+    "frappe_compat",
+    "download_url"
+  ],
+  "fields": [
+    {
+      "fieldname": "app",
+      "fieldtype": "Link",
+      "label": "App",
+      "options": "Registry App",
+      "reqd": 1
+    },
+    {
+      "fieldname": "version",
+      "fieldtype": "Data",
+      "label": "Version",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "release_notes",
+      "fieldtype": "Text",
+      "label": "Release Notes"
+    },
+    {
+      "fieldname": "release_date",
+      "fieldtype": "Date",
+      "label": "Release Date"
+    },
+    {
+      "fieldname": "frappe_compat",
+      "fieldtype": "JSON",
+      "label": "Frappe Compat"
+    },
+    {
+      "fieldname": "download_url",
+      "fieldtype": "Data",
+      "label": "Download URL"
+    }
+  ],
+  "index_web_pages_for_search": 0,
+  "links": [],
+  "modified": "2026-03-23 10:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Nextstar Registry",
+  "name": "App Version",
+  "naming_rule": "Expression",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 1,
+      "role": "System Manager"
+    },
+    {
+      "read": 1,
+      "role": "Guest"
+    }
+  ],
+  "sort_field": "modified",
+  "sort_order": "DESC"
+}

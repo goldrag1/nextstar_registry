@@ -1,0 +1,111 @@
+{
+  "actions": [],
+  "autoname": "hash",
+  "creation": "2026-03-23 10:00:00.000000",
+  "doctype": "DocType",
+  "engine": "InnoDB",
+  "field_order": [
+    "reviewer_email",
+    "app",
+    "rating",
+    "title",
+    "body",
+    "install_proof",
+    "helpful_count",
+    "not_helpful_count",
+    "developer_response",
+    "developer_response_date",
+    "status"
+  ],
+  "fields": [
+    {
+      "fieldname": "reviewer_email",
+      "fieldtype": "Data",
+      "label": "Reviewer Email"
+    },
+    {
+      "fieldname": "app",
+      "fieldtype": "Link",
+      "label": "App",
+      "options": "Registry App",
+      "reqd": 1
+    },
+    {
+      "fieldname": "rating",
+      "fieldtype": "Int",
+      "label": "Rating",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "title",
+      "fieldtype": "Data",
+      "label": "Title",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "body",
+      "fieldtype": "Text",
+      "label": "Body"
+    },
+    {
+      "fieldname": "install_proof",
+      "fieldtype": "Small Text",
+      "label": "Install Proof"
+    },
+    {
+      "fieldname": "helpful_count",
+      "fieldtype": "Int",
+      "label": "Helpful Count",
+      "default": "0"
+    },
+    {
+      "fieldname": "not_helpful_count",
+      "fieldtype": "Int",
+      "label": "Not Helpful Count",
+      "default": "0"
+    },
+    {
+      "fieldname": "developer_response",
+      "fieldtype": "Text",
+      "label": "Developer Response"
+    },
+    {
+      "fieldname": "developer_response_date",
+      "fieldtype": "Datetime",
+      "label": "Developer Response Date"
+    },
+    {
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "label": "Status",
+      "options": "Pending\nPublished\nFlagged",
+      "default": "Published",
+      "in_list_view": 1
+    }
+  ],
+  "index_web_pages_for_search": 0,
+  "links": [],
+  "modified": "2026-03-23 10:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Nextstar Registry",
+  "name": "App Review",
+  "naming_rule": "Random",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 1,
+      "role": "System Manager"
+    },
+    {
+      "read": 1,
+      "role": "Guest"
+    }
+  ],
+  "sort_field": "modified",
+  "sort_order": "DESC"
+}

@@ -13,6 +13,7 @@
     "verified",
     "verified_date",
     "api_key",
+    "trust_level",
     "total_apps",
     "total_installs"
   ],
@@ -65,6 +66,13 @@
       "label": "API Key",
       "read_only": 1,
       "description": "Auto-generated on creation"
+    },
+    {
+      "fieldname": "trust_level",
+      "fieldtype": "Select",
+      "label": "Trust Level",
+      "options": "New\nEstablished",
+      "default": "New"
     },
     {
       "fieldname": "total_apps",

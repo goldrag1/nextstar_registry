@@ -21,7 +21,12 @@
     "rating",
     "install_count",
     "safety_labels",
-    "status"
+    "status",
+    "total_reporting_instances",
+    "avg_error_rate",
+    "avg_scheduler_success",
+    "frappe_version_distribution",
+    "featured"
   ],
   "fields": [
     {
@@ -128,6 +133,39 @@
       "options": "Active\nSuspended\nArchived",
       "default": "Active",
       "in_list_view": 1
+    },
+    {
+      "fieldname": "total_reporting_instances",
+      "fieldtype": "Int",
+      "label": "Total Reporting Instances",
+      "read_only": 1,
+      "default": "0"
+    },
+    {
+      "fieldname": "avg_error_rate",
+      "fieldtype": "Float",
+      "label": "Avg Error Rate",
+      "read_only": 1,
+      "default": "0"
+    },
+    {
+      "fieldname": "avg_scheduler_success",
+      "fieldtype": "Float",
+      "label": "Avg Scheduler Success",
+      "read_only": 1,
+      "default": "0"
+    },
+    {
+      "fieldname": "frappe_version_distribution",
+      "fieldtype": "JSON",
+      "label": "Frappe Version Distribution",
+      "read_only": 1
+    },
+    {
+      "fieldname": "featured",
+      "fieldtype": "Check",
+      "label": "Featured",
+      "default": "0"
     }
   ],
   "index_web_pages_for_search": 0,
