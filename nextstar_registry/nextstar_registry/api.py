@@ -850,3 +850,54 @@ def purchase_featured(app_name, placement, duration_days):
     except Exception:
         # Stripe not configured - block the action
         frappe.throw("Stripe is not configured. Featured placement requires payment setup.")
+
+
+# ---------------------------------------------------------------------------
+# Phase 5D — Archive distribution endpoints
+# ---------------------------------------------------------------------------
+
+@frappe.whitelist(allow_guest=True)
+def upload_app_archive(app_name, version, price=0):
+    """Upload a release archive for private distribution."""
+    developer_email = _get_developer_from_api_key()
+    if not developer_email:
+        frappe.throw("Invalid or missing API key", frappe.AuthenticationError)
+
+    file = frappe.request.files.get("archive")
+    if not file:
+        frappe.throw("No archive file uploaded")
+
+    from nextstar_registry.nextstar_registry.archive_manager import upload_archive
+    content = file.read()
+    result = upload_archive(app_name, version, content, file.filename, developer_email)
+
+    # Also create a submission
+    if not frappe.db.exists("App Submission", {"app_name": app_name, "version": version}):
+        frappe.get_doc({
+            "doctype": "App Submission",
+            "developer": developer_email,
+            "app_name": app_name,
+            "github_url": "",
+            "version": version,
+            "description": f"Archive upload: {file.filename}",
+            "category": "",
+            "license_type": "Proprietary" if float(price or 0) > 0 else "Open Source",
+        }).insert(ignore_permissions=True)
+
+    # Set pricing if specified
+    if float(price or 0) > 0 and frappe.db.exists("Registry App", app_name):
+        frappe.db.set_value("Registry App", app_name, {
+            "pricing_type": "Paid",
+            "price": float(price),
+        })
+
+    frappe.db.commit()
+    return result
+
+
+@frappe.whitelist(allow_guest=True)
+def download_app_archive(app_name, license_key):
+    """Download an app archive — requires valid license for paid apps."""
+    from nextstar_registry.nextstar_registry.archive_manager import download_archive
+    result = download_archive(app_name, license_key)
+    return {"filename": result["filename"], "hash": result["hash"], "status": "ready"}
