@@ -35,6 +35,12 @@
     "demo_username",
     "demo_password",
     "demo_notes",
+    "distribution_section",
+    "distribution_type",
+    "archive_file",
+    "column_break_distribution",
+    "archive_size",
+    "archive_hash",
     "pricing_section",
     "pricing_type",
     "price",
@@ -106,8 +112,7 @@
     {
       "fieldname": "github_url",
       "fieldtype": "Data",
-      "label": "GitHub URL",
-      "reqd": 1
+      "label": "GitHub URL"
     },
     {
       "fieldname": "latest_version",
@@ -227,6 +232,42 @@
       "label": "Demo Notes"
     },
     {
+      "fieldname": "distribution_section",
+      "fieldtype": "Section Break",
+      "label": "Distribution"
+    },
+    {
+      "fieldname": "distribution_type",
+      "fieldtype": "Select",
+      "label": "Distribution Type",
+      "options": "GitHub\nArchive",
+      "default": "GitHub"
+    },
+    {
+      "fieldname": "archive_file",
+      "fieldtype": "Attach",
+      "label": "Archive File",
+      "hidden": 1
+    },
+    {
+      "fieldname": "column_break_distribution",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "archive_size",
+      "fieldtype": "Int",
+      "label": "Archive Size (bytes)",
+      "read_only": 1,
+      "hidden": 1
+    },
+    {
+      "fieldname": "archive_hash",
+      "fieldtype": "Data",
+      "label": "Archive Hash (SHA256)",
+      "read_only": 1,
+      "hidden": 1
+    },
+    {
       "fieldname": "pricing_section",
       "fieldtype": "Section Break",
       "label": "Pricing"
@@ -275,7 +316,7 @@
   ],
   "index_web_pages_for_search": 0,
   "links": [],
-  "modified": "2026-03-23 10:00:00.000000",
+  "modified": "2026-03-24 10:00:00.000000",
   "modified_by": "Administrator",
   "module": "Nextstar Registry",
   "name": "Registry App",
