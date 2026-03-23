@@ -189,6 +189,58 @@ def report_install(app_name):
 
 
 @frappe.whitelist(allow_guest=True)
+def report_install_error(app_name, error_message, terminal_output=None,
+                         frappe_version=None, site_id=None):
+    """Report an install error for an app — logs it and notifies the developer."""
+    if not frappe.db.exists("Registry App", app_name):
+        return {"status": "unknown_app"}
+
+    # Get developer email
+    developer = frappe.db.get_value("Registry App", app_name, "developer")
+    developer_email = None
+    if developer:
+        developer_email = frappe.db.get_value("Registry Developer", developer, "email")
+
+    # Store the error report as an Error Log
+    doc = frappe.get_doc({
+        "doctype": "Error Log",
+        "method": f"App Install Error: {app_name}",
+        "error": (
+            f"App: {app_name}\n"
+            f"Frappe: {frappe_version or 'unknown'}\n"
+            f"Site: {site_id or 'anonymous'}\n\n"
+            f"Error:\n{error_message or 'N/A'}\n\n"
+            f"Terminal Output (last lines):\n{(terminal_output or 'N/A')[-3000:]}"
+        ),
+    })
+    doc.insert(ignore_permissions=True)
+
+    # Email the developer if configured
+    if developer_email:
+        try:
+            frappe.sendmail(
+                recipients=[developer_email],
+                subject=f"Install Error Report: {app_name}",
+                message=(
+                    f"<h3>Install Error Report</h3>"
+                    f"<p><b>App:</b> {frappe.utils.escape_html(app_name)}</p>"
+                    f"<p><b>Frappe Version:</b> {frappe.utils.escape_html(frappe_version or 'unknown')}</p>"
+                    f"<p><b>Error:</b></p>"
+                    f"<pre>{frappe.utils.escape_html(error_message or '')[:2000]}</pre>"
+                    f"<p><b>Terminal Output (last lines):</b></p>"
+                    f"<pre>{frappe.utils.escape_html((terminal_output or '')[-3000:])}</pre>"
+                    f"<p><small>Reported via Nextstar App Store</small></p>"
+                ),
+                now=True,
+            )
+        except Exception:
+            pass  # Email may not be configured
+
+    frappe.db.commit()
+    return {"status": "reported", "developer_notified": bool(developer_email)}
+
+
+@frappe.whitelist(allow_guest=True)
 def get_bundles():
     """Get all available app bundles."""
     bundles = frappe.get_all(
