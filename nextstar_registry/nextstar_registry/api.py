@@ -4,6 +4,22 @@ import frappe
 
 
 @frappe.whitelist(allow_guest=True)
+def get_app_compatibility(app_name):
+    """Get compatibility info for pre-flight checks."""
+    if not frappe.db.exists("Registry App", app_name):
+        return None
+    app = frappe.db.get_value("Registry App", app_name,
+        ["required_apps", "min_frappe_version", "max_frappe_version", "pricing_type"],
+        as_dict=True)
+    if app.get("required_apps") and isinstance(app["required_apps"], str):
+        try:
+            app["required_apps"] = frappe.parse_json(app["required_apps"])
+        except Exception:
+            app["required_apps"] = []
+    return app
+
+
+@frappe.whitelist(allow_guest=True)
 def get_catalog(category=None, search=None, trust_tier=None, page=1, page_size=20):
     """Public catalog endpoint for the App Store client."""
     filters = {"status": "Active"}

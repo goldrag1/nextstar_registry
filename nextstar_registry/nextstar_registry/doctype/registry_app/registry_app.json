@@ -17,6 +17,9 @@
     "github_url",
     "latest_version",
     "frappe_compat",
+    "required_apps",
+    "min_frappe_version",
+    "max_frappe_version",
     "icon_url",
     "rating",
     "install_count",
@@ -116,6 +119,24 @@
       "fieldtype": "Small Text",
       "label": "Frappe Compat",
       "description": "JSON array e.g. [\"v15\",\"v16\"]"
+    },
+    {
+      "fieldname": "required_apps",
+      "fieldtype": "Small Text",
+      "label": "Required Apps",
+      "description": "JSON array e.g. [\"erpnext\"]"
+    },
+    {
+      "fieldname": "min_frappe_version",
+      "fieldtype": "Data",
+      "label": "Min Frappe Version",
+      "description": "e.g. 15.0.0"
+    },
+    {
+      "fieldname": "max_frappe_version",
+      "fieldtype": "Data",
+      "label": "Max Frappe Version",
+      "description": "e.g. 16.99.99"
     },
     {
       "fieldname": "icon_url",
@@ -254,7 +275,7 @@
   ],
   "index_web_pages_for_search": 0,
   "links": [],
-  "modified": "2026-03-22 21:00:00.000000",
+  "modified": "2026-03-23 10:00:00.000000",
   "modified_by": "Administrator",
   "module": "Nextstar Registry",
   "name": "Registry App",
