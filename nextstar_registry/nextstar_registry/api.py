@@ -277,15 +277,23 @@ def get_recent_updates(limit=5):
 # ---------------------------------------------------------------------------
 
 @frappe.whitelist(allow_guest=True)
-def submit_review(app_name, rating, title, body=None, install_proof=None):
+def submit_review(app_name, rating, title, body=None, install_proof=None, nonce=None):
     """Submit a verified review."""
     if not frappe.db.exists("Registry App", app_name):
         frappe.throw(f"App '{app_name}' not found")
     rating = int(rating)
     if rating < 1 or rating > 5:
         frappe.throw("Rating must be between 1 and 5")
-    if install_proof and frappe.db.exists("App Review", {"install_proof": install_proof}):
+
+    # Validate nonce if provided (preferred over install_proof)
+    if nonce:
+        from nextstar_registry.nextstar_registry.review_nonce import validate_review_nonce
+
+        if not validate_review_nonce(nonce, app_name):
+            frappe.throw("Invalid or expired review nonce")
+    elif install_proof and frappe.db.exists("App Review", {"install_proof": install_proof}):
         frappe.throw("Review already submitted with this install proof")
+
     doc = frappe.get_doc({
         "doctype": "App Review",
         "app": app_name,
@@ -490,3 +498,24 @@ def get_featured():
                 or app["developer"]
             )
     return featured
+
+
+# ---------------------------------------------------------------------------
+# Task 0 — Security endpoints
+# ---------------------------------------------------------------------------
+
+@frappe.whitelist(allow_guest=True)
+def get_review_nonce(app_name, instance_uuid):
+    """Generate a review nonce for verified review submission."""
+    from nextstar_registry.nextstar_registry.review_nonce import generate_review_nonce
+
+    nonce = generate_review_nonce(app_name, instance_uuid)
+    return {"nonce": nonce}
+
+
+@frappe.whitelist()
+def proxy_scan_app(github_url):
+    """Proxy app scanning through the registry server."""
+    from nextstar_registry.nextstar_registry.scanner_proxy import proxy_scan
+
+    return proxy_scan(github_url)
