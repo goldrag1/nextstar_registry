@@ -27,6 +27,11 @@
     "avg_scheduler_success",
     "frappe_version_distribution",
     "featured",
+    "demo_section",
+    "demo_url",
+    "demo_username",
+    "demo_password",
+    "demo_notes",
     "pricing_section",
     "pricing_type",
     "price",
@@ -174,6 +179,31 @@
       "fieldtype": "Check",
       "label": "Featured",
       "default": "0"
+    },
+    {
+      "fieldname": "demo_section",
+      "fieldtype": "Section Break",
+      "label": "Demo Site"
+    },
+    {
+      "fieldname": "demo_url",
+      "fieldtype": "Data",
+      "label": "Demo URL"
+    },
+    {
+      "fieldname": "demo_username",
+      "fieldtype": "Data",
+      "label": "Demo Username"
+    },
+    {
+      "fieldname": "demo_password",
+      "fieldtype": "Data",
+      "label": "Demo Password"
+    },
+    {
+      "fieldname": "demo_notes",
+      "fieldtype": "Small Text",
+      "label": "Demo Notes"
     },
     {
       "fieldname": "pricing_section",
