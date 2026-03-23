@@ -4,15 +4,18 @@ import secrets
 
 import frappe
 
-# License signing secret — stored on registry only, never exposed
-_LICENSE_SECRET = None
-
 
 def _get_secret():
-    global _LICENSE_SECRET
-    if not _LICENSE_SECRET:
-        _LICENSE_SECRET = frappe.conf.get("license_signing_secret", frappe.generate_hash(length=32))
-    return _LICENSE_SECRET
+    """Get the license signing secret from Registry Settings."""
+    secret = frappe.db.get_single_value("Registry Settings", "license_signing_secret")
+    if not secret:
+        # Password fields need get_password()
+        settings = frappe.get_single("Registry Settings")
+        if settings.license_signing_secret:
+            secret = settings.get_password("license_signing_secret")
+    if not secret:
+        frappe.throw("License signing secret not configured in Registry Settings")
+    return secret
 
 
 def generate_license_key(app_name):

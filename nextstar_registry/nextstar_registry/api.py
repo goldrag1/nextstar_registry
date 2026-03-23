@@ -3,6 +3,17 @@ import json
 import frappe
 
 
+def _get_developer_from_api_key():
+    """Validate API key from Authorization header and return developer email."""
+    auth = frappe.request.headers.get("Authorization", "") if frappe.request else ""
+    if auth.startswith("Bearer "):
+        api_key = auth[7:]
+        developer = frappe.db.get_value("Registry Developer", {"api_key": api_key}, "email")
+        if developer:
+            return developer
+    return None
+
+
 @frappe.whitelist(allow_guest=True)
 def get_app_compatibility(app_name):
     """Get compatibility info for pre-flight checks."""
@@ -115,7 +126,7 @@ def search_apps(query):
     return get_catalog(search=query)
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def register_developer(developer_name, email, github_username=None):
     """Register a new developer. Returns API key."""
     if frappe.db.exists("Registry Developer", email):
@@ -133,12 +144,15 @@ def register_developer(developer_name, email, github_username=None):
     return {"email": dev.email, "api_key": dev.api_key, "developer_name": dev.developer_name}
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def submit_app(app_name, github_url, version, description=None, category=None,
-               license_type="Open Source", license=None, developer_email=None):
+               license_type="Open Source", license=None, developer_email=None,
+               safety_labels=None, min_frappe_version=None, max_frappe_version=None,
+               required_apps=None):
     """Submit an app for review."""
+    developer_email = _get_developer_from_api_key() or developer_email
     if not developer_email:
-        developer_email = frappe.session.user
+        frappe.throw("Invalid or missing API key", frappe.AuthenticationError)
 
     if not frappe.db.exists("Registry Developer", developer_email):
         frappe.throw("You must register as a developer first")
@@ -153,6 +167,10 @@ def submit_app(app_name, github_url, version, description=None, category=None,
         "category": category or "",
         "license_type": license_type,
         "license": license or "",
+        "safety_labels": safety_labels or "",
+        "min_frappe_version": min_frappe_version or "",
+        "max_frappe_version": max_frappe_version or "",
+        "required_apps": required_apps or "",
     })
     submission.insert(ignore_permissions=True)
     frappe.db.commit()
@@ -229,9 +247,12 @@ def get_app_versions(app_name, page=1, page_size=10):
     )
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def submit_version(app_name, version, release_notes=None, frappe_compat=None):
     """Publish a new version."""
+    developer_email = _get_developer_from_api_key()
+    if not developer_email:
+        frappe.throw("Invalid or missing API key", frappe.AuthenticationError)
     if not frappe.db.exists("Registry App", app_name):
         frappe.throw(f"App '{app_name}' not found")
     doc = frappe.get_doc({
@@ -259,9 +280,12 @@ def get_screenshots(app_name):
     )
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def upload_screenshot(app_name, caption=None):
     """Upload a screenshot for an app."""
+    developer_email = _get_developer_from_api_key()
+    if not developer_email:
+        frappe.throw("Invalid or missing API key", frappe.AuthenticationError)
     if not frappe.db.exists("Registry App", app_name):
         frappe.throw(f"App '{app_name}' not found")
     doc = frappe.get_doc({
@@ -358,9 +382,12 @@ def get_reviews(app_name, page=1, page_size=10):
     return {"reviews": reviews, "total": total, "average_rating": round(float(avg), 1)}
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def respond_to_review(review_name, response_text):
     """Developer responds to a review."""
+    developer_email = _get_developer_from_api_key()
+    if not developer_email:
+        frappe.throw("Invalid or missing API key", frappe.AuthenticationError)
     review = frappe.get_doc("App Review", review_name)
     review.developer_response = response_text
     review.developer_response_date = frappe.utils.now_datetime()
@@ -415,6 +442,42 @@ def complete_review(submission_name, verdict, notes=None):
         reviewer.reputation_points += 10
         reviewer.reviews_completed += 1
         reviewer.save(ignore_permissions=True)
+    # Create or update Registry App on approval
+    if verdict == "Approved":
+        if frappe.db.exists("Registry App", submission.app_name):
+            app = frappe.get_doc("Registry App", submission.app_name)
+            app.latest_version = submission.version
+            app.github_url = submission.github_url
+            app.description = submission.description or app.description
+            app.category = submission.category or app.category
+            app.license_type = submission.license_type or app.license_type
+            app.license = submission.license or app.license
+            app.safety_labels = submission.safety_labels or app.safety_labels
+            app.min_frappe_version = submission.min_frappe_version or app.min_frappe_version
+            app.max_frappe_version = submission.max_frappe_version or app.max_frappe_version
+            app.required_apps = submission.required_apps or app.required_apps
+            app.status = "Active"
+            app.save(ignore_permissions=True)
+        else:
+            frappe.get_doc({
+                "doctype": "Registry App",
+                "app_name": submission.app_name,
+                "title": submission.app_name.replace("_", " ").title(),
+                "github_url": submission.github_url,
+                "latest_version": submission.version,
+                "description": submission.description or "",
+                "category": submission.category or "",
+                "developer": submission.developer,
+                "trust_tier": "Community",
+                "license_type": submission.license_type or "Open Source",
+                "license": submission.license or "",
+                "safety_labels": submission.safety_labels or "",
+                "min_frappe_version": submission.min_frappe_version or "",
+                "max_frappe_version": submission.max_frappe_version or "",
+                "required_apps": submission.required_apps or "",
+                "status": "Active",
+            }).insert(ignore_permissions=True)
+
     # Auto-upgrade developer trust level on first approval
     if verdict == "Approved" and submission.developer:
         if frappe.db.exists("Registry Developer", submission.developer):
@@ -446,9 +509,12 @@ def report_health(instance_uuid, app_name, error_count, scheduler_success_rate, 
     return {"status": "ok"}
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def get_health_summary(app_name):
     """Get aggregate health for a developer's app."""
+    developer_email = _get_developer_from_api_key()
+    if not developer_email:
+        frappe.throw("Invalid or missing API key", frappe.AuthenticationError)
     if not frappe.db.exists("Registry App", app_name):
         frappe.throw(f"App '{app_name}' not found")
     app = frappe.get_doc("Registry App", app_name)
@@ -558,6 +624,7 @@ def get_review_nonce(app_name, instance_uuid):
 @frappe.whitelist()
 def proxy_scan_app(github_url):
     """Proxy app scanning through the registry server."""
+    frappe.only_for("System Manager")
     from nextstar_registry.nextstar_registry.scanner_proxy import proxy_scan
 
     return proxy_scan(github_url)
@@ -614,9 +681,15 @@ def stripe_webhook():
 # Phase 4 — Payout, Featured, Spotlight endpoints
 # ---------------------------------------------------------------------------
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def get_developer_payouts(developer_email):
     """Get payout history for a developer."""
+    caller_email = _get_developer_from_api_key()
+    if not caller_email:
+        frappe.throw("Invalid or missing API key", frappe.AuthenticationError)
+    # Developers can only view their own payouts
+    if caller_email != developer_email:
+        frappe.throw("You can only view your own payouts", frappe.PermissionError)
     return frappe.get_all(
         "Developer Payout",
         filters={"developer": developer_email},
@@ -676,25 +749,29 @@ def get_developer_spotlight():
 
 @frappe.whitelist()
 def purchase_featured(app_name, placement, duration_days):
-    """Purchase featured placement."""
-    from frappe.utils import add_days, today
+    """Purchase featured placement - requires Stripe payment."""
+    developer_email = _get_developer_from_api_key()
+    if not developer_email:
+        frappe.only_for("System Manager")
 
-    # Featured placement pricing (simple weekly pricing)
+    if not frappe.db.exists("Registry App", app_name):
+        frappe.throw(f"App '{app_name}' not found")
+
     pricing = {"Hero": 99, "Banner": 49, "Sidebar": 29}
-    price_per_day = pricing.get(placement, 29)
+    weekly_price = pricing.get(placement, 29)
     duration_days = int(duration_days)
-    total = price_per_day * (duration_days / 7)  # Weekly pricing
+    total = weekly_price * max(1, duration_days // 7)
 
-    # For now, just create the featured listing directly (no payment for MVP)
-    doc = frappe.get_doc({
-        "doctype": "Featured Listing",
-        "app": app_name,
-        "start_date": today(),
-        "end_date": add_days(today(), duration_days),
-        "placement": placement,
-        "paid_amount": total,
-        "status": "Active",
-    })
-    doc.insert(ignore_permissions=True)
-    frappe.db.commit()
-    return {"status": "active", "end_date": str(doc.end_date)}
+    # Create via Stripe checkout (not free)
+    from nextstar_registry.nextstar_registry.stripe_integration import create_checkout_session
+    try:
+        result = create_checkout_session(
+            app_name=f"featured-{app_name}-{placement}",
+            buyer_email=developer_email or frappe.session.user,
+            success_url=frappe.utils.get_url() + f"/app/featured-listing?app={app_name}",
+            cancel_url=frappe.utils.get_url() + "/app/registry-app",
+        )
+        return {"checkout_url": result.get("checkout_url"), "amount": total}
+    except Exception:
+        # Stripe not configured - block the action
+        frappe.throw("Stripe is not configured. Featured placement requires payment setup.")

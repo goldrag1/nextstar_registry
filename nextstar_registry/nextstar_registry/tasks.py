@@ -31,6 +31,16 @@ def aggregate_health_data():
     frappe.db.commit()
 
 
+def expire_featured_listings():
+    """Expire featured listings past their end date."""
+    from frappe.utils import today
+    frappe.db.sql(
+        """UPDATE `tabFeatured Listing` SET status='Expired'
+        WHERE status='Active' AND end_date < %s""", today()
+    )
+    frappe.db.commit()
+
+
 def cleanup_old_health_reports():
     """Daily: delete health reports older than 90 days."""
     frappe.db.sql(

@@ -17,7 +17,11 @@
     "submitted_at",
     "reviewed_at",
     "reviewer_notes",
-    "safety_scan_result"
+    "safety_scan_result",
+    "safety_labels",
+    "min_frappe_version",
+    "max_frappe_version",
+    "required_apps"
   ],
   "fields": [
     {
@@ -97,6 +101,26 @@
       "fieldname": "safety_scan_result",
       "fieldtype": "JSON",
       "label": "Safety Scan Result"
+    },
+    {
+      "fieldname": "safety_labels",
+      "fieldtype": "Small Text",
+      "label": "Safety Labels"
+    },
+    {
+      "fieldname": "min_frappe_version",
+      "fieldtype": "Data",
+      "label": "Min Frappe Version"
+    },
+    {
+      "fieldname": "max_frappe_version",
+      "fieldtype": "Data",
+      "label": "Max Frappe Version"
+    },
+    {
+      "fieldname": "required_apps",
+      "fieldtype": "Small Text",
+      "label": "Required Apps"
     }
   ],
   "index_web_pages_for_search": 0,
