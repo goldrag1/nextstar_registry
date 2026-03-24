@@ -1,179 +1,179 @@
 {
-  "actions": [],
-  "creation": "2026-03-23 10:00:00.000000",
-  "doctype": "DocType",
-  "engine": "InnoDB",
-  "issingle": 1,
-  "field_order": [
-    "stripe_section",
-    "stripe_secret_key",
-    "stripe_publishable_key",
-    "stripe_webhook_secret",
-    "column_break_stripe",
-    "payout_currency",
-    "commission_rate",
-    "secrets_section",
-    "anthropic_api_key",
-    "license_signing_secret",
-    "scanning_section",
-    "scan_mode",
-    "scan_model",
-    "scan_on_publish",
-    "notify_developer_on_scan",
-    "column_break_scanning",
-    "scan_max_files",
-    "scan_max_size_kb",
-    "ai_scan_section",
-    "ai_scan_daily_budget",
-    "column_break_ai_scan",
-    "ai_scan_daily_count",
-    "ai_scan_daily_reset"
-  ],
-  "fields": [
-    {
-      "fieldname": "stripe_section",
-      "fieldtype": "Section Break",
-      "label": "Stripe Integration"
-    },
-    {
-      "fieldname": "stripe_secret_key",
-      "fieldtype": "Password",
-      "label": "Stripe Secret Key"
-    },
-    {
-      "fieldname": "stripe_publishable_key",
-      "fieldtype": "Data",
-      "label": "Stripe Publishable Key"
-    },
-    {
-      "fieldname": "stripe_webhook_secret",
-      "fieldtype": "Password",
-      "label": "Stripe Webhook Secret"
-    },
-    {
-      "fieldname": "column_break_stripe",
-      "fieldtype": "Column Break"
-    },
-    {
-      "fieldname": "payout_currency",
-      "fieldtype": "Data",
-      "label": "Payout Currency",
-      "default": "USD"
-    },
-    {
-      "fieldname": "commission_rate",
-      "fieldtype": "Percent",
-      "label": "Commission Rate",
-      "default": "15"
-    },
-    {
-      "fieldname": "secrets_section",
-      "fieldtype": "Section Break",
-      "label": "Secrets"
-    },
-    {
-      "fieldname": "anthropic_api_key",
-      "fieldtype": "Password",
-      "label": "Anthropic API Key"
-    },
-    {
-      "fieldname": "license_signing_secret",
-      "fieldtype": "Password",
-      "label": "License Signing Secret"
-    },
-    {
-      "fieldname": "scanning_section",
-      "fieldtype": "Section Break",
-      "label": "Scanning"
-    },
-    {
-      "fieldname": "scan_mode",
-      "fieldtype": "Select",
-      "label": "AI Scan Mode",
-      "options": "Batch (recommended)\nSynchronous\nDisabled",
-      "default": "Batch (recommended)"
-    },
-    {
-      "fieldname": "scan_model",
-      "fieldtype": "Select",
-      "label": "AI Scan Model",
-      "options": "claude-opus-4-0\nclaude-sonnet-4-5",
-      "default": "claude-opus-4-0"
-    },
-    {
-      "fieldname": "scan_on_publish",
-      "fieldtype": "Check",
-      "label": "Auto-scan on app publish",
-      "default": "1"
-    },
-    {
-      "fieldname": "notify_developer_on_scan",
-      "fieldtype": "Check",
-      "label": "Notify developer when scan completes",
-      "default": "1"
-    },
-    {
-      "fieldname": "column_break_scanning",
-      "fieldtype": "Column Break"
-    },
-    {
-      "fieldname": "scan_max_files",
-      "fieldtype": "Int",
-      "label": "Max files to scan per app",
-      "default": "10"
-    },
-    {
-      "fieldname": "scan_max_size_kb",
-      "fieldtype": "Int",
-      "label": "Max total code size (KB)",
-      "default": "50"
-    },
-    {
-      "fieldname": "ai_scan_section",
-      "fieldtype": "Section Break",
-      "label": "AI Scanning Budget"
-    },
-    {
-      "fieldname": "ai_scan_daily_budget",
-      "fieldtype": "Currency",
-      "label": "AI Scan Daily Budget ($)",
-      "default": "5",
-      "description": "Maximum daily spend on AI scans. Each scan costs ~$0.05."
-    },
-    {
-      "fieldname": "column_break_ai_scan",
-      "fieldtype": "Column Break"
-    },
-    {
-      "fieldname": "ai_scan_daily_count",
-      "fieldtype": "Int",
-      "label": "Scans Today",
-      "default": "0",
-      "read_only": 1
-    },
-    {
-      "fieldname": "ai_scan_daily_reset",
-      "fieldtype": "Date",
-      "label": "Daily Reset Date",
-      "read_only": 1,
-      "hidden": 1
-    }
-  ],
-  "index_web_pages_for_search": 0,
-  "links": [],
-  "modified": "2026-03-24 20:00:00.000000",
-  "modified_by": "Administrator",
-  "module": "Nextstar Registry",
-  "name": "Registry Settings",
-  "owner": "Administrator",
-  "permissions": [
-    {
-      "read": 1,
-      "write": 1,
-      "create": 1,
-      "role": "System Manager"
-    }
-  ],
-  "sort_field": "modified",
-  "sort_order": "DESC"
+ "actions": [],
+ "creation": "2026-03-23 10:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "issingle": 1,
+ "field_order": [
+  "stripe_section",
+  "stripe_secret_key",
+  "stripe_publishable_key",
+  "stripe_webhook_secret",
+  "column_break_stripe",
+  "payout_currency",
+  "commission_rate",
+  "secrets_section",
+  "anthropic_api_key",
+  "license_signing_secret",
+  "scanning_section",
+  "scan_mode",
+  "scan_model",
+  "scan_on_publish",
+  "notify_developer_on_scan",
+  "column_break_scanning",
+  "scan_max_files",
+  "scan_max_size_kb",
+  "ai_scan_section",
+  "ai_scan_daily_budget",
+  "column_break_ai_scan",
+  "ai_scan_daily_count",
+  "ai_scan_daily_reset"
+ ],
+ "fields": [
+  {
+   "fieldname": "stripe_section",
+   "fieldtype": "Section Break",
+   "label": "Stripe Integration"
+  },
+  {
+   "fieldname": "stripe_secret_key",
+   "fieldtype": "Password",
+   "label": "Stripe Secret Key"
+  },
+  {
+   "fieldname": "stripe_publishable_key",
+   "fieldtype": "Data",
+   "label": "Stripe Publishable Key"
+  },
+  {
+   "fieldname": "stripe_webhook_secret",
+   "fieldtype": "Password",
+   "label": "Stripe Webhook Secret"
+  },
+  {
+   "fieldname": "column_break_stripe",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "payout_currency",
+   "fieldtype": "Data",
+   "label": "Payout Currency",
+   "default": "USD"
+  },
+  {
+   "fieldname": "commission_rate",
+   "fieldtype": "Percent",
+   "label": "Commission Rate",
+   "default": "15"
+  },
+  {
+   "fieldname": "secrets_section",
+   "fieldtype": "Section Break",
+   "label": "Secrets"
+  },
+  {
+   "fieldname": "anthropic_api_key",
+   "fieldtype": "Password",
+   "label": "Anthropic API Key"
+  },
+  {
+   "fieldname": "license_signing_secret",
+   "fieldtype": "Password",
+   "label": "License Signing Secret"
+  },
+  {
+   "fieldname": "scanning_section",
+   "fieldtype": "Section Break",
+   "label": "Scanning"
+  },
+  {
+   "fieldname": "scan_mode",
+   "fieldtype": "Select",
+   "label": "AI Scan Mode",
+   "options": "Batch (recommended)\nSynchronous\nDisabled",
+   "default": "Batch (recommended)"
+  },
+  {
+   "fieldname": "scan_model",
+   "fieldtype": "Select",
+   "label": "AI Scan Model",
+   "options": "claude-opus-4-6\nclaude-opus-4-0\nclaude-sonnet-4-5",
+   "default": "claude-opus-4-6"
+  },
+  {
+   "fieldname": "scan_on_publish",
+   "fieldtype": "Check",
+   "label": "Auto-scan on app publish",
+   "default": "1"
+  },
+  {
+   "fieldname": "notify_developer_on_scan",
+   "fieldtype": "Check",
+   "label": "Notify developer when scan completes",
+   "default": "1"
+  },
+  {
+   "fieldname": "column_break_scanning",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "scan_max_files",
+   "fieldtype": "Int",
+   "label": "Max files to scan per app",
+   "default": "10"
+  },
+  {
+   "fieldname": "scan_max_size_kb",
+   "fieldtype": "Int",
+   "label": "Max total code size (KB)",
+   "default": "50"
+  },
+  {
+   "fieldname": "ai_scan_section",
+   "fieldtype": "Section Break",
+   "label": "AI Scanning Budget"
+  },
+  {
+   "fieldname": "ai_scan_daily_budget",
+   "fieldtype": "Currency",
+   "label": "AI Scan Daily Budget ($)",
+   "default": "5",
+   "description": "Maximum daily spend on AI scans. Each scan costs ~$0.05."
+  },
+  {
+   "fieldname": "column_break_ai_scan",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "ai_scan_daily_count",
+   "fieldtype": "Int",
+   "label": "Scans Today",
+   "default": "0",
+   "read_only": 1
+  },
+  {
+   "fieldname": "ai_scan_daily_reset",
+   "fieldtype": "Date",
+   "label": "Daily Reset Date",
+   "read_only": 1,
+   "hidden": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-03-24 20:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Nextstar Registry",
+ "name": "Registry Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "role": "System Manager"
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC"
 }

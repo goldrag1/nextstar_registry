@@ -6,6 +6,7 @@ import frappe
 
 # Pricing per model (per million tokens)
 MODEL_PRICING = {
+    "claude-opus-4-6": {"input": 15, "output": 75},
     "claude-opus-4-0": {"input": 15, "output": 75},      # $15/MTok in, $75/MTok out
     "claude-sonnet-4-5": {"input": 3, "output": 15},      # $3/MTok in, $15/MTok out
 }
