@@ -13,6 +13,10 @@
     "verified",
     "verified_date",
     "api_key",
+    "api_key_created",
+    "api_key_last_used",
+    "api_key_usage_count",
+    "avatar_url",
     "trust_level",
     "total_apps",
     "total_installs"
@@ -66,6 +70,29 @@
       "label": "API Key",
       "read_only": 1,
       "description": "Auto-generated on creation"
+    },
+    {
+      "fieldname": "api_key_created",
+      "fieldtype": "Datetime",
+      "label": "API Key Created"
+    },
+    {
+      "fieldname": "api_key_last_used",
+      "fieldtype": "Datetime",
+      "label": "API Key Last Used",
+      "read_only": 1
+    },
+    {
+      "fieldname": "api_key_usage_count",
+      "fieldtype": "Int",
+      "label": "API Key Usage Count",
+      "read_only": 1,
+      "default": "0"
+    },
+    {
+      "fieldname": "avatar_url",
+      "fieldtype": "Data",
+      "label": "Avatar URL"
     },
     {
       "fieldname": "trust_level",

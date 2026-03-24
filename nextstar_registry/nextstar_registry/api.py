@@ -17,8 +17,20 @@ def _get_developer_from_api_key():
     if api_key:
         developer = frappe.db.get_value("Registry Developer", {"api_key": api_key}, "email")
         if developer:
+            frappe.db.set_value("Registry Developer", developer, {
+                "api_key_last_used": frappe.utils.now_datetime(),
+                "api_key_usage_count": (frappe.db.get_value("Registry Developer", developer, "api_key_usage_count") or 0) + 1,
+            }, update_modified=False)
             return developer
     return None
+
+
+def _require_developer():
+    """Auth guard — returns developer email or raises AuthenticationError."""
+    email = _get_developer_from_api_key()
+    if not email:
+        frappe.throw("Invalid API key", frappe.AuthenticationError)
+    return email
 
 
 @frappe.whitelist(allow_guest=True)
@@ -936,3 +948,374 @@ def mark_manually_reviewed(submission_name, notes=""):
     frappe.db.commit()
 
     return {"status": "reviewed", "reviewer": frappe.session.user}
+
+
+# ---------------------------------------------------------------------------
+# Phase 1 — Developer Portal endpoints
+# ---------------------------------------------------------------------------
+
+@frappe.whitelist(allow_guest=True)
+def developer_login(api_key):
+    """Portal login — validate key and return developer profile."""
+    if not api_key:
+        frappe.throw("API key is required", frappe.AuthenticationError)
+
+    dev = frappe.db.get_value(
+        "Registry Developer", {"api_key": api_key},
+        ["email", "developer_name", "github_username", "website", "bio",
+         "verified", "trust_level", "total_apps", "total_installs", "avatar_url"],
+        as_dict=True,
+    )
+    if not dev:
+        frappe.throw("Invalid API key", frappe.AuthenticationError)
+
+    # Track usage
+    frappe.db.set_value("Registry Developer", dev.email, {
+        "api_key_last_used": frappe.utils.now_datetime(),
+        "api_key_usage_count": (frappe.db.get_value("Registry Developer", dev.email, "api_key_usage_count") or 0) + 1,
+    }, update_modified=False)
+
+    return dev
+
+
+@frappe.whitelist(allow_guest=True)
+def get_my_profile():
+    """Return the authenticated developer's own profile data."""
+    email = _require_developer()
+    dev = frappe.db.get_value(
+        "Registry Developer", email,
+        ["email", "developer_name", "github_username", "website", "bio",
+         "verified", "trust_level", "total_apps", "total_installs", "avatar_url"],
+        as_dict=True,
+    )
+    if not dev:
+        frappe.throw("Developer not found", frappe.DoesNotExistError)
+    return dev
+
+
+@frappe.whitelist(allow_guest=True)
+def get_my_submissions(page=1, page_size=20, status=None):
+    """Get submissions for the authenticated developer."""
+    email = _require_developer()
+    page = int(page)
+    page_size = min(int(page_size), 100)
+    start = (page - 1) * page_size
+
+    filters = {"developer": email}
+    if status:
+        filters["status"] = status
+
+    submissions = frappe.get_all(
+        "App Submission",
+        filters=filters,
+        fields=["name", "app_name", "version", "status", "github_url",
+                "submitted_at", "reviewed_at", "scan_date", "creation"],
+        order_by="creation desc",
+        start=start,
+        page_length=page_size,
+    )
+    total = frappe.db.count("App Submission", filters)
+    return {"submissions": submissions, "total": total}
+
+
+@frappe.whitelist(allow_guest=True)
+def get_submission_detail(submission_name):
+    """Get full detail for a submission owned by the authenticated developer."""
+    email = _require_developer()
+
+    sub = frappe.get_doc("App Submission", submission_name)
+    if sub.developer != email:
+        frappe.throw("You do not own this submission", frappe.PermissionError)
+
+    data = sub.as_dict()
+
+    # Parse scan_result JSON
+    if data.get("scan_result") and isinstance(data["scan_result"], str):
+        try:
+            data["scan_result"] = json.loads(data["scan_result"])
+        except Exception:
+            data["scan_result"] = {}
+
+    # Build timeline
+    timeline = []
+
+    # Step 1: Submitted
+    timeline.append({
+        "step": "Submitted",
+        "date": str(data.get("submitted_at") or data.get("creation") or ""),
+        "status": "done",
+    })
+
+    # Step 2: Scanning
+    if data.get("scan_date"):
+        timeline.append({"step": "Scanning", "date": "", "status": "done"})
+    elif data.get("status") == "Scanning":
+        timeline.append({"step": "Scanning", "date": "", "status": "current"})
+    else:
+        scanning_status = "done" if data.get("status") in ("Scanned", "Under Review", "Approved", "Rejected") else "pending"
+        timeline.append({"step": "Scanning", "date": "", "status": scanning_status})
+
+    # Step 3: Scanned
+    if data.get("scan_date"):
+        timeline.append({"step": "Scanned", "date": str(data["scan_date"]), "status": "done"})
+    else:
+        timeline.append({"step": "Scanned", "date": "", "status": "pending"})
+
+    # Step 4: Under Review
+    if data.get("status") in ("Under Review",):
+        timeline.append({"step": "Under Review", "date": "", "status": "current"})
+    elif data.get("status") in ("Approved", "Rejected"):
+        timeline.append({"step": "Under Review", "date": "", "status": "done"})
+    else:
+        timeline.append({"step": "Under Review", "date": "", "status": "pending"})
+
+    # Step 5: Approved / Rejected
+    if data.get("status") == "Approved":
+        timeline.append({
+            "step": "Approved",
+            "date": str(data.get("reviewed_at") or ""),
+            "status": "done",
+        })
+    elif data.get("status") == "Rejected":
+        timeline.append({
+            "step": "Rejected",
+            "date": str(data.get("reviewed_at") or ""),
+            "status": "done",
+        })
+    else:
+        timeline.append({"step": "Approved", "date": "", "status": "pending"})
+
+    data["timeline"] = timeline
+    return data
+
+
+@frappe.whitelist(allow_guest=True)
+def get_my_apps():
+    """Get apps published by the authenticated developer."""
+    email = _require_developer()
+    apps = frappe.get_all(
+        "Registry App",
+        filters={"developer": email, "status": "Active"},
+        fields=["app_name", "title", "description", "category", "trust_tier",
+                "latest_version", "rating", "install_count", "icon_url",
+                "pricing_type", "price", "integrity_status"],
+        order_by="install_count desc",
+    )
+    return apps
+
+
+@frappe.whitelist(allow_guest=True)
+def get_app_analytics(app_name):
+    """Get analytics for a developer's app."""
+    email = _require_developer()
+
+    # Verify ownership
+    app_developer = frappe.db.get_value("Registry App", app_name, "developer")
+    if app_developer != email:
+        frappe.throw("You do not own this app", frappe.PermissionError)
+
+    app = frappe.get_doc("Registry App", app_name)
+
+    # Average rating
+    avg_rating_result = frappe.db.sql(
+        """SELECT AVG(rating) FROM `tabApp Review`
+        WHERE app=%s AND status='Published'""", app_name
+    )
+    avg_rating = round(float(avg_rating_result[0][0] or 0), 1)
+
+    # Reviews
+    reviews = frappe.get_all(
+        "App Review",
+        filters={"app": app_name, "status": "Published"},
+        fields=["name", "reviewer_email", "rating", "title", "body",
+                "developer_response", "developer_response_date", "creation"],
+        order_by="creation desc",
+        page_length=50,
+    )
+
+    # Health reports
+    health_reports = frappe.get_all(
+        "Health Report",
+        filters={"app": app_name},
+        fields=["reporting_instance", "error_count", "scheduler_success_rate",
+                "frappe_version", "report_date"],
+        order_by="report_date desc",
+        page_length=20,
+    )
+
+    # Submission history
+    submissions = frappe.get_all(
+        "App Submission",
+        filters={"app_name": app_name, "developer": email},
+        fields=["name", "version", "status", "scan_date", "creation"],
+        order_by="creation desc",
+    )
+
+    return {
+        "total_installs": app.install_count or 0,
+        "integrity_status": app.integrity_status or "",
+        "avg_rating": avg_rating,
+        "reviews": reviews,
+        "health_reports": health_reports,
+        "submission_history": submissions,
+    }
+
+
+@frappe.whitelist(allow_guest=True)
+def get_my_revenue():
+    """Get revenue summary for the authenticated developer."""
+    email = _require_developer()
+
+    # Payouts
+    payouts = frappe.get_all(
+        "Developer Payout",
+        filters={"developer": email},
+        fields=["name", "period_start", "period_end", "total_sales",
+                "commission_amount", "net_payout", "status", "payout_date"],
+        order_by="period_end desc",
+    )
+
+    total_revenue = sum(p.get("total_sales", 0) or 0 for p in payouts)
+    total_paid = sum(
+        (p.get("net_payout", 0) or 0) for p in payouts if p.get("status") == "Paid"
+    )
+    pending = sum(
+        (p.get("net_payout", 0) or 0) for p in payouts if p.get("status") != "Paid"
+    )
+
+    # Recent sales (licenses for developer's apps)
+    dev_apps = frappe.get_all(
+        "Registry App", filters={"developer": email}, fields=["app_name"], pluck="app_name"
+    )
+    recent_sales = []
+    if dev_apps:
+        recent_sales = frappe.get_all(
+            "App License",
+            filters={"app": ("in", dev_apps)},
+            fields=["name", "app", "buyer_email", "status", "issued_at"],
+            order_by="issued_at desc",
+            page_length=50,
+        )
+
+    return {
+        "total_revenue": total_revenue,
+        "total_paid": total_paid,
+        "pending": pending,
+        "payouts": payouts,
+        "recent_sales": recent_sales,
+    }
+
+
+@frappe.whitelist(allow_guest=True)
+def update_my_profile(developer_name=None, bio=None, website=None, github_username=None):
+    """Update the authenticated developer's profile."""
+    email = _require_developer()
+
+    updates = {}
+    if developer_name is not None:
+        developer_name = frappe.utils.strip_html_tags(developer_name)[:140]
+        if developer_name:
+            updates["developer_name"] = developer_name
+
+    if bio is not None:
+        updates["bio"] = frappe.utils.strip_html_tags(bio)[:500]
+
+    if website is not None:
+        updates["website"] = frappe.utils.strip_html_tags(website)[:200]
+
+    if github_username is not None:
+        updates["github_username"] = frappe.utils.strip_html_tags(github_username)[:100]
+
+    if updates:
+        frappe.db.set_value("Registry Developer", email, updates)
+        frappe.db.commit()
+
+    return {"status": "ok", "updated_fields": list(updates.keys())}
+
+
+@frappe.whitelist(allow_guest=True)
+def regenerate_api_key():
+    """Regenerate the authenticated developer's API key."""
+    email = _require_developer()
+    dev = frappe.get_doc("Registry Developer", email)
+    new_key = dev.regenerate_key()
+    frappe.db.commit()
+    return {"api_key": new_key}
+
+
+@frappe.whitelist(allow_guest=True)
+def reset_api_key(email):
+    """Request an API key reset via email. Rate limited: max 3 per email per hour."""
+    if not email:
+        return {"status": "ok", "message": "If the email is registered, a new key has been sent."}
+
+    # Rate limiting
+    cache_key = f"reset_api_key:{email}"
+    count = frappe.cache.get(cache_key) or 0
+    if int(count) >= 3:
+        return {"status": "ok", "message": "If the email is registered, a new key has been sent."}
+
+    frappe.cache.set(cache_key, int(count) + 1, expires_in_sec=3600)
+
+    # Process reset (don't reveal if email exists)
+    if frappe.db.exists("Registry Developer", email):
+        dev = frappe.get_doc("Registry Developer", email)
+        new_key = dev.regenerate_key()
+        frappe.db.commit()
+
+        try:
+            frappe.sendmail(
+                recipients=[email],
+                subject="Your Nextstar API Key Has Been Reset",
+                message=(
+                    f"<h3>API Key Reset</h3>"
+                    f"<p>Your new API key is:</p>"
+                    f"<pre>{new_key}</pre>"
+                    f"<p>If you did not request this reset, please contact support immediately.</p>"
+                    f"<p><small>Nextstar App Store</small></p>"
+                ),
+                now=True,
+            )
+        except Exception:
+            pass
+
+    return {"status": "ok", "message": "If the email is registered, a new key has been sent."}
+
+
+@frappe.whitelist(allow_guest=True)
+def resubmit_app(submission_name):
+    """Resubmit an app (create new submission from an existing one)."""
+    email = _require_developer()
+
+    original = frappe.get_doc("App Submission", submission_name)
+    if original.developer != email:
+        frappe.throw("You do not own this submission", frappe.PermissionError)
+
+    new_sub = frappe.get_doc({
+        "doctype": "App Submission",
+        "developer": email,
+        "app_name": original.app_name,
+        "github_url": original.github_url,
+        "version": original.version,
+        "description": original.description or "",
+        "category": original.category or "",
+        "license_type": original.license_type or "Open Source",
+        "license": original.license or "",
+        "safety_labels": original.safety_labels or "",
+        "min_frappe_version": original.min_frappe_version or "",
+        "max_frappe_version": original.max_frappe_version or "",
+        "required_apps": original.required_apps or "",
+    })
+    new_sub.insert(ignore_permissions=True)
+    frappe.db.commit()
+
+    # Enqueue background scan
+    frappe.enqueue(
+        "nextstar_registry.nextstar_registry.scanner_proxy.scan_submission",
+        queue="long",
+        timeout=300,
+        submission_name=new_sub.name,
+        github_url=new_sub.github_url,
+    )
+
+    return {"submission": new_sub.name, "status": new_sub.status}
