@@ -51,6 +51,7 @@ def proxy_scan(github_url, force_ai=False):
         # AI scan
         ai_findings = []
         ai_ran = False
+        ai_result = {}
         settings = frappe.get_single("Registry Settings")
         api_key = settings.get_password("anthropic_api_key") if settings.anthropic_api_key else None
 
@@ -65,11 +66,31 @@ def proxy_scan(github_url, force_ai=False):
             if ai_ran:
                 _increment_ai_scan_count()
 
+        # Count code lines in the cloned repo
+        total_lines = 0
+        total_files = 0
+        for root, dirs, files in os.walk(tmpdir):
+            if any(skip in root for skip in [".git", "__pycache__", "node_modules"]):
+                continue
+            for f in files:
+                if f.endswith(".py"):
+                    total_files += 1
+                    try:
+                        with open(os.path.join(root, f)) as fh:
+                            total_lines += sum(1 for _ in fh)
+                    except Exception:
+                        pass
+
         # Merge results
         all_findings = lint_findings + ai_findings
         has_critical = any(
             f.get("severity") == "critical" for f in all_findings
         )
+
+        # Merge metrics from AI scan if available
+        metrics = ai_result.get("metrics", {}) if ai_ran else {}
+        metrics["code_lines"] = metrics.get("code_lines") or total_lines
+        metrics["files_count"] = metrics.get("files_count") or total_files
 
         return {
             "scan_type": "lint+ai" if ai_ran else lint_result.get("scan_type", "lint"),
@@ -79,6 +100,7 @@ def proxy_scan(github_url, force_ai=False):
             "has_critical": has_critical or lint_result.get("has_critical", False),
             "finding_count": len(all_findings),
             "ai_ran": ai_ran,
+            "metrics": metrics,
         }
     finally:
         shutil.rmtree(tmpdir, ignore_errors=True)
@@ -184,6 +206,23 @@ def _store_scan_result(submission, result, commit_hash):
     submission.scan_commit_hash = commit_hash or ""
     submission.scan_date = frappe.utils.now_datetime()
     submission.ai_scan_ran = result.get("ai_ran", False)
+
+    # Store metrics if available
+    metrics = result.get("metrics", {})
+    if metrics:
+        if metrics.get("code_lines"):
+            submission.scan_code_lines = metrics["code_lines"]
+        if metrics.get("files_count"):
+            submission.scan_files_count = metrics["files_count"]
+        if metrics.get("input_tokens"):
+            submission.scan_input_tokens = metrics["input_tokens"]
+        if metrics.get("output_tokens"):
+            submission.scan_output_tokens = metrics["output_tokens"]
+        if metrics.get("cost_usd"):
+            submission.scan_cost_usd = metrics["cost_usd"]
+        if metrics.get("duration_seconds"):
+            submission.scan_duration_seconds = metrics["duration_seconds"]
+
     submission.save(ignore_permissions=True)
     frappe.db.commit()
 

@@ -114,16 +114,30 @@ def poll_batch_scan_results():
             lint_findings = lint_data.get("findings", [])
             ai_findings = results[0].get("findings", []) if results else []
 
+            # Extract metrics from batch results
+            batch_metrics = results[0].get("metrics", {}) if results else {}
+
             combined = {
                 "findings": lint_findings + ai_findings,
                 "summary": f"Lint: {len(lint_findings)} findings, AI: {len(ai_findings)} findings",
                 "scan_type": "combined",
                 "ai_ran": True,
+                "metrics": batch_metrics,
             }
 
             submission = frappe.get_doc("App Submission", sub["name"])
             submission.scan_result = json.dumps(combined)
             submission.ai_scan_ran = 1
+
+            # Store token metrics from batch results
+            if batch_metrics:
+                if batch_metrics.get("input_tokens"):
+                    submission.scan_input_tokens = batch_metrics["input_tokens"]
+                if batch_metrics.get("output_tokens"):
+                    submission.scan_output_tokens = batch_metrics["output_tokens"]
+                if batch_metrics.get("cost_usd"):
+                    submission.scan_cost_usd = batch_metrics["cost_usd"]
+
             submission.save(ignore_permissions=True)
             frappe.db.commit()
 

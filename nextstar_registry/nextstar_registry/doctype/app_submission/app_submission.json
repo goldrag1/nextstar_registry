@@ -26,7 +26,15 @@
     "scan_result",
     "scan_commit_hash",
     "scan_date",
-    "ai_scan_ran"
+    "ai_scan_ran",
+    "scan_metrics_section",
+    "scan_code_lines",
+    "scan_files_count",
+    "scan_input_tokens",
+    "column_break_scan_metrics",
+    "scan_output_tokens",
+    "scan_cost_usd",
+    "scan_duration_seconds"
   ],
   "fields": [
     {
@@ -156,11 +164,57 @@
       "label": "AI Scan Ran",
       "read_only": 1,
       "default": "0"
+    },
+    {
+      "fieldname": "scan_metrics_section",
+      "fieldtype": "Section Break",
+      "label": "Scan Metrics",
+      "collapsible": 1
+    },
+    {
+      "fieldname": "scan_code_lines",
+      "fieldtype": "Int",
+      "label": "Code Lines Scanned",
+      "read_only": 1
+    },
+    {
+      "fieldname": "scan_files_count",
+      "fieldtype": "Int",
+      "label": "Files Scanned",
+      "read_only": 1
+    },
+    {
+      "fieldname": "scan_input_tokens",
+      "fieldtype": "Int",
+      "label": "Input Tokens",
+      "read_only": 1
+    },
+    {
+      "fieldname": "column_break_scan_metrics",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "scan_output_tokens",
+      "fieldtype": "Int",
+      "label": "Output Tokens",
+      "read_only": 1
+    },
+    {
+      "fieldname": "scan_cost_usd",
+      "fieldtype": "Currency",
+      "label": "Scan Cost (USD)",
+      "read_only": 1
+    },
+    {
+      "fieldname": "scan_duration_seconds",
+      "fieldtype": "Float",
+      "label": "Scan Duration (s)",
+      "read_only": 1
     }
   ],
   "index_web_pages_for_search": 0,
   "links": [],
-  "modified": "2026-03-24 10:00:00.000000",
+  "modified": "2026-03-24 18:00:00.000000",
   "modified_by": "Administrator",
   "module": "Nextstar Registry",
   "name": "App Submission",

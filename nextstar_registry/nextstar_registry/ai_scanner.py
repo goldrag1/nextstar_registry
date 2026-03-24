@@ -1,5 +1,6 @@
 """AI-powered code review using Claude for Frappe app security analysis."""
 import os
+import time
 
 import frappe
 
@@ -16,16 +17,21 @@ def ai_review(app_path, api_key, max_files=10, max_size_kb=50):
     if not code_content:
         return {"findings": [], "summary": "AI review: no key files found", "scan_type": "ai", "ai_ran": False}
 
+    code_lines = code_content.count('\n') if code_content else 0
+    files_count = code_content.count('=== ') if code_content else 0
+
     prompt = _build_review_prompt(code_content)
 
     try:
         import anthropic
         client = anthropic.Anthropic(api_key=api_key)
+        start = time.time()
         message = client.messages.create(
             model="claude-sonnet-4-5",
             max_tokens=1024,
             messages=[{"role": "user", "content": prompt}],
         )
+        duration = time.time() - start
         response = message.content[0].text
     except Exception as e:
         frappe.logger().error(f"AI review failed: {e}")
@@ -38,11 +44,24 @@ def ai_review(app_path, api_key, max_files=10, max_size_kb=50):
 
     findings = _parse_review_response(response)
 
+    input_tokens = message.usage.input_tokens
+    output_tokens = message.usage.output_tokens
+    # Claude Sonnet pricing: $3/MTok input, $15/MTok output
+    cost = (input_tokens * 3 / 1_000_000) + (output_tokens * 15 / 1_000_000)
+
     return {
         "findings": findings,
         "summary": f"AI review: {len(findings)} findings",
         "scan_type": "ai",
         "ai_ran": True,
+        "metrics": {
+            "code_lines": code_lines,
+            "files_count": files_count,
+            "input_tokens": input_tokens,
+            "output_tokens": output_tokens,
+            "cost_usd": round(cost, 4),
+            "duration_seconds": round(duration, 2),
+        },
     }
 
 
@@ -54,6 +73,17 @@ def ai_review_batch(app_path, api_key, submission_name, max_files=10, max_size_k
     code_content = _collect_key_files(app_path, max_files=max_files, max_size_kb=max_size_kb)
     if not code_content:
         return None
+
+    code_lines = code_content.count('\n') if code_content else 0
+    files_count = code_content.count('=== ') if code_content else 0
+
+    # Store pre-scan metrics on submission
+    if frappe.db.exists("App Submission", submission_name):
+        frappe.db.set_value("App Submission", submission_name, {
+            "scan_code_lines": code_lines,
+            "scan_files_count": files_count,
+        })
+        frappe.db.commit()
 
     prompt = _build_review_prompt(code_content)
 
@@ -94,13 +124,23 @@ def check_batch_result(batch_id, api_key):
     results = []
     for result in client.messages.batches.results(batch_id):
         if result.result.type == "succeeded":
-            response_text = result.result.message.content[0].text
+            msg = result.result.message
+            response_text = msg.content[0].text
             findings = _parse_review_response(response_text)
+            input_tokens = msg.usage.input_tokens
+            output_tokens = msg.usage.output_tokens
+            # Batch pricing is 50% of standard
+            cost = (input_tokens * 1.5 / 1_000_000) + (output_tokens * 7.5 / 1_000_000)
             results.append({
                 "custom_id": result.custom_id,
                 "findings": findings,
                 "summary": f"AI review: {len(findings)} findings",
                 "ai_ran": True,
+                "metrics": {
+                    "input_tokens": input_tokens,
+                    "output_tokens": output_tokens,
+                    "cost_usd": round(cost, 4),
+                },
             })
         else:
             results.append({
