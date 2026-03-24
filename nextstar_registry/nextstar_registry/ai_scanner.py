@@ -61,7 +61,7 @@ def ai_review_batch(app_path, api_key, submission_name, max_files=10, max_size_k
         import anthropic
         client = anthropic.Anthropic(api_key=api_key)
 
-        batch = client.batches.create(
+        batch = client.messages.batches.create(
             requests=[
                 {
                     "custom_id": submission_name,
@@ -85,14 +85,14 @@ def check_batch_result(batch_id, api_key):
     import anthropic
 
     client = anthropic.Anthropic(api_key=api_key)
-    batch = client.batches.retrieve(batch_id)
+    batch = client.messages.batches.retrieve(batch_id)
 
     if batch.processing_status != "ended":
         return None  # Still processing
 
     # Get results
     results = []
-    for result in client.batches.results(batch_id):
+    for result in client.messages.batches.results(batch_id):
         if result.result.type == "succeeded":
             response_text = result.result.message.content[0].text
             findings = _parse_review_response(response_text)
