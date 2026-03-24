@@ -79,6 +79,62 @@ def check_app_integrity():
     frappe.db.commit()
 
 
+def poll_batch_scan_results():
+    """Hourly: check pending batch scans for results."""
+    settings = frappe.get_single("Registry Settings")
+    api_key = settings.get_password("anthropic_api_key") if settings.anthropic_api_key else None
+    if not api_key:
+        return
+
+    # Find submissions with pending batch scans
+    submissions = frappe.get_all(
+        "App Submission",
+        filters={"scan_result": ("like", "%batch_id%")},
+        fields=["name", "scan_result", "developer"],
+    )
+
+    from nextstar_registry.nextstar_registry.ai_scanner import check_batch_result
+
+    for sub in submissions:
+        try:
+            scan_data = json.loads(sub["scan_result"])
+            if scan_data.get("status") != "processing":
+                continue
+
+            batch_id = scan_data.get("batch_id")
+            if not batch_id:
+                continue
+
+            results = check_batch_result(batch_id, api_key)
+            if results is None:
+                continue  # Still processing
+
+            # Merge batch AI results with existing lint results
+            lint_data = scan_data.get("lint", {})
+            lint_findings = lint_data.get("findings", [])
+            ai_findings = results[0].get("findings", []) if results else []
+
+            combined = {
+                "findings": lint_findings + ai_findings,
+                "summary": f"Lint: {len(lint_findings)} findings, AI: {len(ai_findings)} findings",
+                "scan_type": "combined",
+                "ai_ran": True,
+            }
+
+            submission = frappe.get_doc("App Submission", sub["name"])
+            submission.scan_result = json.dumps(combined)
+            submission.ai_scan_ran = 1
+            submission.save(ignore_permissions=True)
+            frappe.db.commit()
+
+            # Notify developer
+            from nextstar_registry.nextstar_registry.scanner_proxy import _notify_scan_complete
+            _notify_scan_complete(submission, combined)
+
+        except Exception as e:
+            frappe.log_error(title=f"Batch scan poll error: {sub['name']}", message=str(e))
+
+
 def calculate_monthly_payouts():
     """Monthly: calculate payouts for all developers with sales."""
     from frappe.utils import add_months, getdate, today

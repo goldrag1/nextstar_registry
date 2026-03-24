@@ -144,6 +144,9 @@ after_uninstall = "nextstar_registry.install.after_uninstall"
 # ---------------
 
 scheduler_events = {
+	"hourly": [
+		"nextstar_registry.nextstar_registry.tasks.poll_batch_scan_results",
+	],
 	"daily": [
 		"nextstar_registry.nextstar_registry.tasks.aggregate_health_data",
 		"nextstar_registry.nextstar_registry.tasks.cleanup_old_health_reports",

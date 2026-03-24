@@ -15,6 +15,13 @@
     "secrets_section",
     "anthropic_api_key",
     "license_signing_secret",
+    "scanning_section",
+    "scan_mode",
+    "scan_on_publish",
+    "notify_developer_on_scan",
+    "column_break_scanning",
+    "scan_max_files",
+    "scan_max_size_kb",
     "ai_scan_section",
     "ai_scan_daily_budget",
     "column_break_ai_scan",
@@ -74,6 +81,46 @@
       "label": "License Signing Secret"
     },
     {
+      "fieldname": "scanning_section",
+      "fieldtype": "Section Break",
+      "label": "Scanning"
+    },
+    {
+      "fieldname": "scan_mode",
+      "fieldtype": "Select",
+      "label": "AI Scan Mode",
+      "options": "Batch (recommended)\nSynchronous\nDisabled",
+      "default": "Batch (recommended)"
+    },
+    {
+      "fieldname": "scan_on_publish",
+      "fieldtype": "Check",
+      "label": "Auto-scan on app publish",
+      "default": "1"
+    },
+    {
+      "fieldname": "notify_developer_on_scan",
+      "fieldtype": "Check",
+      "label": "Notify developer when scan completes",
+      "default": "1"
+    },
+    {
+      "fieldname": "column_break_scanning",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "scan_max_files",
+      "fieldtype": "Int",
+      "label": "Max files to scan per app",
+      "default": "10"
+    },
+    {
+      "fieldname": "scan_max_size_kb",
+      "fieldtype": "Int",
+      "label": "Max total code size (KB)",
+      "default": "50"
+    },
+    {
       "fieldname": "ai_scan_section",
       "fieldtype": "Section Break",
       "label": "AI Scanning Budget"
@@ -106,7 +153,7 @@
   ],
   "index_web_pages_for_search": 0,
   "links": [],
-  "modified": "2026-03-24 10:00:00.000000",
+  "modified": "2026-03-24 12:00:00.000000",
   "modified_by": "Administrator",
   "module": "Nextstar Registry",
   "name": "Registry Settings",

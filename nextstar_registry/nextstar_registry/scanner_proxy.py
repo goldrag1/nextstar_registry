@@ -57,7 +57,9 @@ def proxy_scan(github_url, force_ai=False):
         if api_key and (force_ai or _should_ai_scan()):
             from nextstar_registry.nextstar_registry.ai_scanner import ai_review
 
-            ai_result = ai_review(tmpdir, api_key)
+            max_files = int(getattr(settings, "scan_max_files", 10) or 10)
+            max_size_kb = int(getattr(settings, "scan_max_size_kb", 50) or 50)
+            ai_result = ai_review(tmpdir, api_key, max_files=max_files, max_size_kb=max_size_kb)
             ai_findings = ai_result.get("findings", [])
             ai_ran = ai_result.get("ai_ran", False)
             if ai_ran:
@@ -84,6 +86,9 @@ def proxy_scan(github_url, force_ai=False):
 
 def scan_submission(submission_name, github_url):
     """Background job: scan a submitted app and store results."""
+    settings = frappe.get_single("Registry Settings")
+    scan_mode = getattr(settings, "scan_mode", "Batch (recommended)") or "Batch (recommended)"
+
     submission = frappe.get_doc("App Submission", submission_name)
 
     # Get commit hash
@@ -92,27 +97,88 @@ def scan_submission(submission_name, github_url):
     # Check cache
     cached = _get_cached_scan(github_url, commit_hash)
     if cached:
-        submission.scan_result = json.dumps(cached)
-        submission.scan_commit_hash = commit_hash
-        submission.scan_date = frappe.utils.now_datetime()
-        submission.ai_scan_ran = cached.get("ai_ran", False)
-        submission.save(ignore_permissions=True)
-        frappe.db.commit()
+        _store_scan_result(submission, cached, commit_hash)
+        _notify_scan_complete(submission, cached)
         return
 
-    # Run fresh scan
+    if scan_mode == "Disabled":
+        # Just run lint, no AI
+        result = proxy_scan(github_url, force_ai=False)
+        _store_scan_result(submission, result, commit_hash)
+        _notify_scan_complete(submission, result)
+        return
+
+    # Run lint first (always)
     try:
-        result = proxy_scan(github_url, force_ai=True)
+        lint_result = proxy_scan(github_url, force_ai=False)
     except Exception as e:
-        result = {
+        lint_result = {
             "scan_type": "error",
             "findings": [],
-            "summary": f"Scan failed: {str(e)[:200]}",
+            "summary": f"Lint scan failed: {str(e)[:200]}",
             "has_critical": False,
             "finding_count": 0,
             "ai_ran": False,
         }
 
+    _store_scan_result(submission, lint_result, commit_hash)
+
+    api_key = settings.get_password("anthropic_api_key") if settings.anthropic_api_key else None
+    if not api_key:
+        _notify_scan_complete(submission, lint_result)
+        return
+
+    if scan_mode == "Synchronous":
+        # Sync AI scan (existing behavior)
+        try:
+            result = proxy_scan(github_url, force_ai=True)
+        except Exception as e:
+            result = {
+                "scan_type": "error",
+                "findings": lint_result.get("findings", []),
+                "summary": f"AI scan failed: {str(e)[:200]}",
+                "has_critical": lint_result.get("has_critical", False),
+                "finding_count": lint_result.get("finding_count", 0),
+                "ai_ran": False,
+            }
+        _store_scan_result(submission, result, commit_hash)
+        _notify_scan_complete(submission, result)
+    else:
+        # Batch mode -- submit async job, results come later
+        from nextstar_registry.nextstar_registry.ai_scanner import ai_review_batch
+
+        max_files = int(getattr(settings, "scan_max_files", 10) or 10)
+        max_size_kb = int(getattr(settings, "scan_max_size_kb", 50) or 50)
+
+        tmpdir = tempfile.mkdtemp(prefix="nextstar_batch_")
+        try:
+            subprocess.run(
+                ["git", "clone", "--depth=1", github_url, tmpdir],
+                capture_output=True, timeout=120,
+            )
+            batch_id = ai_review_batch(
+                tmpdir, api_key, submission_name,
+                max_files=max_files, max_size_kb=max_size_kb,
+            )
+            if batch_id:
+                submission.reload()
+                # Store batch_id for polling
+                submission.scan_result = json.dumps({
+                    "batch_id": batch_id,
+                    "status": "processing",
+                    "lint": lint_result,
+                })
+                submission.save(ignore_permissions=True)
+                frappe.db.commit()
+            else:
+                # Batch submission failed, notify with lint-only results
+                _notify_scan_complete(submission, lint_result)
+        finally:
+            shutil.rmtree(tmpdir, ignore_errors=True)
+
+
+def _store_scan_result(submission, result, commit_hash):
+    """Store scan result on the submission document."""
     submission.reload()
     submission.scan_result = json.dumps(result)
     submission.scan_commit_hash = commit_hash or ""
@@ -120,6 +186,104 @@ def scan_submission(submission_name, github_url):
     submission.ai_scan_ran = result.get("ai_ran", False)
     submission.save(ignore_permissions=True)
     frappe.db.commit()
+
+
+def _notify_scan_complete(submission, scan_result):
+    """Notify the developer that their app scan is complete."""
+    settings = frappe.get_single("Registry Settings")
+    if not getattr(settings, "notify_developer_on_scan", 1):
+        return
+
+    developer_email = submission.developer
+    if not developer_email:
+        return
+
+    findings = scan_result.get("findings", []) if isinstance(scan_result, dict) else []
+    critical = sum(1 for f in findings if f.get("severity") == "critical")
+    warnings = sum(1 for f in findings if f.get("severity") == "warning")
+    info = sum(1 for f in findings if f.get("severity") == "info")
+    ai_ran = scan_result.get("ai_ran", False) if isinstance(scan_result, dict) else False
+
+    # Determine status
+    if critical > 0:
+        status_text = f"{critical} critical issue(s) found"
+        status_color = "red"
+    elif warnings > 0:
+        status_text = f"{warnings} warning(s) found"
+        status_color = "orange"
+    else:
+        status_text = "No critical issues"
+        status_color = "green"
+
+    scan_type = "AI + Static Analysis" if ai_ran else "Static Analysis Only"
+    app_name = getattr(submission, "app_name", submission.name)
+    version = getattr(submission, "version", "")
+
+    subject = f"Scan Complete: {app_name} v{version} -- {status_text}"
+    message = f"""<h3>App Scan Results</h3>
+    <p><b>App:</b> {frappe.utils.escape_html(app_name)}</p>
+    <p><b>Version:</b> {frappe.utils.escape_html(version)}</p>
+    <p><b>Scan Type:</b> {scan_type}</p>
+    <p><b>Status:</b> <span style="color:{status_color}; font-weight:bold;">{status_text}</span></p>
+    <p><b>Results:</b> {critical} critical, {warnings} warnings, {info} info</p>
+    <hr>
+    <p>Your submission <b>{submission.name}</b> is now ready for review by the Nextstar team.</p>
+    <p>You'll be notified when the review is complete.</p>
+    <p><small>Nextstar App Store Registry</small></p>"""
+
+    try:
+        frappe.sendmail(
+            recipients=[developer_email],
+            subject=subject,
+            message=message,
+            now=True,
+        )
+    except Exception:
+        pass  # Email may not be configured
+
+    # Also create a notification log on the registry
+    try:
+        frappe.get_doc({
+            "doctype": "Notification Log",
+            "for_user": "Administrator",
+            "type": "Alert",
+            "document_type": "App Submission",
+            "document_name": submission.name,
+            "subject": subject,
+            "email_content": f"Scan for {app_name} v{version}: {status_text}",
+        }).insert(ignore_permissions=True)
+    except Exception:
+        pass
+
+
+def _notify_review_complete(submission, verdict):
+    """Notify developer when their submission is reviewed."""
+    developer_email = submission.developer
+    if not developer_email:
+        return
+
+    app_name = getattr(submission, "app_name", submission.name)
+    version = getattr(submission, "version", "")
+
+    if verdict == "Approved":
+        subject = f"Approved: {app_name} v{version}"
+        message = f"""<h3>Your app has been approved!</h3>
+        <p><b>{frappe.utils.escape_html(app_name)}</b> v{frappe.utils.escape_html(version)} is now live
+        in the Nextstar App Store catalog.</p>
+        <p>Users can now discover and install your app.</p>
+        <p><small>Nextstar App Store Registry</small></p>"""
+    else:
+        subject = f"Rejected: {app_name} v{version}"
+        message = f"""<h3>Your submission was not approved</h3>
+        <p><b>{frappe.utils.escape_html(app_name)}</b> v{frappe.utils.escape_html(version)}
+        did not pass review.</p>
+        <p>Please address the issues and submit a new version.</p>
+        <p><small>Nextstar App Store Registry</small></p>"""
+
+    try:
+        frappe.sendmail(recipients=[developer_email], subject=subject, message=message, now=True)
+    except Exception:
+        pass
 
 
 def _get_github_head_hash(github_url):
@@ -147,7 +311,11 @@ def _get_cached_scan(github_url, commit_hash):
     )
     if cached:
         try:
-            return json.loads(cached)
+            data = json.loads(cached)
+            # Don't use cache if it's a pending batch scan
+            if data.get("status") == "processing":
+                return None
+            return data
         except Exception:
             pass
     return None

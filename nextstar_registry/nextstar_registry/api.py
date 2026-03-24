@@ -5,12 +5,16 @@ import frappe
 
 def _get_developer_from_api_key():
     """Validate API key from Authorization header and return developer email."""
-    # Check X-Api-Key header first (avoids Frappe auth interception)
     if not frappe.request:
         return None
+    # Check X-Api-Key header first (avoids Frappe auth interception)
     api_key = frappe.request.headers.get("X-Api-Key", "")
-    if auth.startswith("Bearer "):
-        api_key = auth[7:]
+    if not api_key:
+        # Fallback to Authorization: Bearer <key>
+        auth = frappe.request.headers.get("Authorization", "")
+        if auth.startswith("Bearer "):
+            api_key = auth[7:]
+    if api_key:
         developer = frappe.db.get_value("Registry Developer", {"api_key": api_key}, "email")
         if developer:
             return developer
@@ -160,6 +164,12 @@ def submit_app(app_name, github_url, version, description=None, category=None,
 
     if not frappe.db.exists("Registry Developer", developer_email):
         frappe.throw("You must register as a developer first")
+
+    # Serialize dict/list params to JSON strings for storage
+    if isinstance(safety_labels, (dict, list)):
+        safety_labels = json.dumps(safety_labels)
+    if isinstance(required_apps, (dict, list)):
+        required_apps = json.dumps(required_apps)
 
     submission = frappe.get_doc({
         "doctype": "App Submission",
@@ -558,6 +568,11 @@ def complete_review(submission_name, verdict, notes=None):
         if frappe.db.exists("Registry Developer", submission.developer):
             frappe.db.set_value("Registry Developer", submission.developer, "trust_level", "Established")
     frappe.db.commit()
+
+    # Notify developer of review result
+    from nextstar_registry.nextstar_registry.scanner_proxy import _notify_review_complete
+    _notify_review_complete(submission, verdict)
+
     return {"status": verdict}
 
 
