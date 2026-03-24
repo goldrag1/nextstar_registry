@@ -1494,6 +1494,7 @@ block page_content %}
 					headers: {
 						"Content-Type": "application/json",
 						"X-Api-Key": api_key || "",
+						"X-Frappe-CSRF-Token": window.frappe?.csrf_token || "",
 					},
 					body: JSON.stringify(args),
 				},
