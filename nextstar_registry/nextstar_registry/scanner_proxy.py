@@ -356,8 +356,10 @@ def _get_cached_scan(github_url, commit_hash):
     if cached:
         try:
             data = json.loads(cached)
-            # Don't use cache if it's a pending batch scan
+            # Don't use cache if it's a pending batch scan or a failed/unavailable result
             if data.get("status") == "processing":
+                return None
+            if data.get("scan_type") in ("unavailable", "error"):
                 return None
             return data
         except Exception:
