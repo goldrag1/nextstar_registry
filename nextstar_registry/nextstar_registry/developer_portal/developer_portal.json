@@ -1,0 +1,16 @@
+{
+  "content": null,
+  "creation": "2026-03-24 12:00:00",
+  "docstatus": 0,
+  "doctype": "Page",
+  "modified": "2026-03-24 12:00:00",
+  "modified_by": "Administrator",
+  "module": "Nextstar Registry",
+  "name": "developer-portal",
+  "owner": "Administrator",
+  "page_name": "developer-portal",
+  "roles": [{ "role": "Guest" }],
+  "standard": "Yes",
+  "system_page": 0,
+  "title": "Developer Portal"
+}
