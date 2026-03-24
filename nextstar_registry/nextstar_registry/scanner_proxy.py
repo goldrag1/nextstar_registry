@@ -100,6 +100,7 @@ def proxy_scan(github_url, force_ai=False):
             "has_critical": has_critical or lint_result.get("has_critical", False),
             "finding_count": len(all_findings),
             "ai_ran": ai_ran,
+            "model": ai_result.get("model") if ai_ran else None,
             "metrics": metrics,
         }
     finally:
@@ -206,6 +207,10 @@ def _store_scan_result(submission, result, commit_hash):
     submission.scan_commit_hash = commit_hash or ""
     submission.scan_date = frappe.utils.now_datetime()
     submission.ai_scan_ran = result.get("ai_ran", False)
+
+    # Store model used if available
+    if result.get("model"):
+        submission.scan_model_used = result["model"]
 
     # Store metrics if available
     metrics = result.get("metrics", {})

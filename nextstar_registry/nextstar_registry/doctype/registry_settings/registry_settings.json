@@ -17,6 +17,7 @@
     "license_signing_secret",
     "scanning_section",
     "scan_mode",
+    "scan_model",
     "scan_on_publish",
     "notify_developer_on_scan",
     "column_break_scanning",
@@ -93,6 +94,13 @@
       "default": "Batch (recommended)"
     },
     {
+      "fieldname": "scan_model",
+      "fieldtype": "Select",
+      "label": "AI Scan Model",
+      "options": "claude-opus-4-0\nclaude-sonnet-4-5",
+      "default": "claude-opus-4-0"
+    },
+    {
       "fieldname": "scan_on_publish",
       "fieldtype": "Check",
       "label": "Auto-scan on app publish",
@@ -153,7 +161,7 @@
   ],
   "index_web_pages_for_search": 0,
   "links": [],
-  "modified": "2026-03-24 12:00:00.000000",
+  "modified": "2026-03-24 20:00:00.000000",
   "modified_by": "Administrator",
   "module": "Nextstar Registry",
   "name": "Registry Settings",

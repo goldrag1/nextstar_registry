@@ -27,6 +27,7 @@
     "scan_commit_hash",
     "scan_date",
     "ai_scan_ran",
+    "scan_model_used",
     "scan_metrics_section",
     "scan_code_lines",
     "scan_files_count",
@@ -34,7 +35,13 @@
     "column_break_scan_metrics",
     "scan_output_tokens",
     "scan_cost_usd",
-    "scan_duration_seconds"
+    "scan_duration_seconds",
+    "manual_review_section",
+    "manual_review",
+    "manual_review_notes",
+    "column_break_manual_review",
+    "manual_reviewer",
+    "manual_review_date"
   ],
   "fields": [
     {
@@ -166,6 +173,12 @@
       "default": "0"
     },
     {
+      "fieldname": "scan_model_used",
+      "fieldtype": "Data",
+      "label": "AI Model Used",
+      "read_only": 1
+    },
+    {
       "fieldname": "scan_metrics_section",
       "fieldtype": "Section Break",
       "label": "Scan Metrics",
@@ -210,11 +223,42 @@
       "fieldtype": "Float",
       "label": "Scan Duration (s)",
       "read_only": 1
+    },
+    {
+      "fieldname": "manual_review_section",
+      "fieldtype": "Section Break",
+      "label": "Manual Review"
+    },
+    {
+      "fieldname": "manual_review",
+      "fieldtype": "Check",
+      "label": "Manually Reviewed"
+    },
+    {
+      "fieldname": "manual_review_notes",
+      "fieldtype": "Text",
+      "label": "Review Notes"
+    },
+    {
+      "fieldname": "column_break_manual_review",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "manual_reviewer",
+      "fieldtype": "Data",
+      "label": "Reviewed By",
+      "read_only": 1
+    },
+    {
+      "fieldname": "manual_review_date",
+      "fieldtype": "Datetime",
+      "label": "Review Date",
+      "read_only": 1
     }
   ],
   "index_web_pages_for_search": 0,
   "links": [],
-  "modified": "2026-03-24 18:00:00.000000",
+  "modified": "2026-03-24 20:00:00.000000",
   "modified_by": "Administrator",
   "module": "Nextstar Registry",
   "name": "App Submission",

@@ -916,3 +916,23 @@ def download_app_archive(app_name, license_key):
     from nextstar_registry.nextstar_registry.archive_manager import download_archive
     result = download_archive(app_name, license_key)
     return {"filename": result["filename"], "hash": result["hash"], "status": "ready"}
+
+
+# ---------------------------------------------------------------------------
+# Manual review
+# ---------------------------------------------------------------------------
+
+@frappe.whitelist()
+def mark_manually_reviewed(submission_name, notes=""):
+    """Admin marks a submission as manually reviewed."""
+    frappe.only_for("System Manager")
+
+    submission = frappe.get_doc("App Submission", submission_name)
+    submission.manual_review = 1
+    submission.manual_review_notes = notes
+    submission.manual_reviewer = frappe.session.user
+    submission.manual_review_date = frappe.utils.now_datetime()
+    submission.save(ignore_permissions=True)
+    frappe.db.commit()
+
+    return {"status": "reviewed", "reviewer": frappe.session.user}
